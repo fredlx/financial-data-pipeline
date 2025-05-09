@@ -1,0 +1,18 @@
+# Virtual environment
+.venv/
+
+# Local notebooks
+*.ipynb
+
+# Temporary or utility scripts
+my_reports/
+scan_todos.py
+
+# Python bytecode cache
+**/__pycache__/
+
+# Data files (raw + processed)
+data/
+
+# Airflow runtime folder
+airflow_home/
