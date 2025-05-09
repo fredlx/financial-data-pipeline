@@ -54,7 +54,8 @@ def infer_interval_from_series(time_series: pd.Series):
 
 # ---------- METADATA HELPERS ----------
 
-META_FILE = Path("data/meta/metadata.json")
+META_FILE = Path("data/meta/last_date_per_symbol.json")
+
 
 def load_metadata():
     if META_FILE.exists():
@@ -62,17 +63,19 @@ def load_metadata():
             return json.load(f)
     return {}
 
+
 def save_metadata(meta: dict):
     META_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(META_FILE, 'w') as f:
         json.dump(meta, f, indent=2)
 
-def update_metadata(time_series, symbol, interval, meta, meta_key):
+
+def update_metadata(time_series, interval, meta, meta_key):
     if time_series.empty:
         raise ValueError("Time series is empty — cannot update metadata.")
     last_dt = time_series.max()
     last_date_str = last_dt.strftime('%Y-%m-%d %H:%M') if is_intraday(interval) else last_dt.strftime('%Y-%m-%d')
-    meta[meta_key] = {"last_date": last_date_str, "interval": interval}
+    meta[meta_key] = {"last_date": last_date_str}
     save_metadata(meta)
 
 # ---------- FILE LOAD HELPERS ----------
@@ -89,9 +92,13 @@ def load_raw_csv(symbol, interval, data_dir=Path("data")):
 # ---------- SMART CSV READER ----------
 
 def read_csv_auto(path: Path) -> pd.DataFrame:
-    """Reads CSV or CSV.GZ automatically."""
+    """Reads CSV or GZIP-compressed CSV automatically by content (file signature), not extension."""
     if not path.exists():
         raise FileNotFoundError(f"{path} not found")
 
-    compression = "gzip" if path.suffix == ".gz" else None
+    # Check magic number (gzip = 0x1f8b)
+    with open(path, "rb") as f:
+        magic = f.read(2)
+
+    compression = "gzip" if magic == b"\x1f\x8b" else None
     return pd.read_csv(path, compression=compression)
