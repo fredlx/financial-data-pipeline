@@ -6,20 +6,23 @@ import importlib
 import scripts.etl_utils
 importlib.reload(scripts.etl_utils)
 
-from scripts.etl_utils import read_csv_auto
+from scripts.etl_utils import read_auto_file
 
+# (DONE) working
 # (TODO) logging, compress logic, 
 def transform_stock_data(symbol, interval, **kwargs):
     
-    project_root = Path(__file__).resolve().parents[1]
     symbol = symbol.upper()
     
+    # load raw
+    project_root = Path(__file__).resolve().parents[1]
     input_dir = project_root / "data" / symbol / "raw"
     input_path = input_dir / f"{symbol}_{interval}_raw.csv"
+    
     if not input_path.exists():
         input_path = input_dir / f"{symbol}_{interval}_raw.csv.gz"
 
-    df = read_csv_auto(input_path)
+    df = read_auto_file(input_path)  
     if df.empty:
         raise ValueError("raw df is empty")
     

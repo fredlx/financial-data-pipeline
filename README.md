@@ -3,12 +3,16 @@
 Extraction:
 - Yfinance (pip install yfinance)
 
-Transformation:
+Transformations:
 - TA Library (pip install ta)
+- pandas-market-calendars (pip install pandas-market-calendars)
 
 Pipeline Management:
 - Airflow
 
+Loading:
+- CSV, CSV + gzip
+- Parquet, Parquet + snappy, Parquet + gzip (pip install pyarrow)
 
 
 Start Airflow services (in terminal):

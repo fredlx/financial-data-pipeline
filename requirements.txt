@@ -160,3 +160,4 @@ wrapt==1.17.2
 yfinance==0.2.59
 zipp==3.21.0
 pyarrow
+pandas-market-calendars

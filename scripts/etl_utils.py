@@ -2,6 +2,7 @@ import pandas as pd
 from pathlib import Path
 import json
 
+
 # ---------- INTERVAL HELPERS ----------
 
 def is_intraday(interval: str) -> bool:
@@ -50,10 +51,12 @@ def infer_interval_from_series(time_series: pd.Series):
     else:
         raise ValueError(f"Unsupported interval: {delta}")
 
-    return label, delta
+    return label#, delta
+
 
 # ---------- METADATA HELPERS ----------
 
+# (TODO) move to settings/config.ini
 META_FILE = Path("data/meta/last_date_per_symbol.json")
 
 
@@ -63,12 +66,10 @@ def load_metadata():
             return json.load(f)
     return {}
 
-
 def save_metadata(meta: dict):
     META_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(META_FILE, 'w') as f:
         json.dump(meta, f, indent=2)
-
 
 def update_metadata(time_series, interval, meta, meta_key):
     if time_series.empty:
@@ -78,27 +79,45 @@ def update_metadata(time_series, interval, meta, meta_key):
     meta[meta_key] = {"last_date": last_date_str}
     save_metadata(meta)
 
+
 # ---------- FILE LOAD HELPERS ----------
 
-def load_raw_csv(symbol, interval, data_dir=Path("data")):
+def load_raw_data(symbol, interval, data_dir=Path("data")) -> pd.DataFrame:
+    
     base = data_dir / symbol / "raw" / f"{symbol}_{interval}_raw"
-    for ext in [".csv", ".csv.gz"]:
+    
+    for ext in [".parquet", ".csv.gz", ".csv"]:
         path = base.with_suffix(ext)
+        
         if path.exists():
-            return pd.read_csv(path)
+            return read_auto_file(path)
+    
     raise FileNotFoundError(f"No raw file found for {symbol} with interval {interval}")
 
 
-# ---------- SMART CSV READER ----------
-
-def read_csv_auto(path: Path) -> pd.DataFrame:
-    """Reads CSV or GZIP-compressed CSV automatically by content (file signature), not extension."""
+def read_auto_file(path: Path) -> pd.DataFrame:
+    """Support for CSV, CSV+GZIP, Parquet"""
+    
     if not path.exists():
         raise FileNotFoundError(f"{path} not found")
 
-    # Check magic number (gzip = 0x1f8b)
-    with open(path, "rb") as f:
-        magic = f.read(2)
+    suffix = path.suffix.lower()
 
-    compression = "gzip" if magic == b"\x1f\x8b" else None
-    return pd.read_csv(path, compression=compression)
+    if suffix == ".parquet":
+        return pd.read_parquet(path)
+
+    elif suffix == ".csv":
+        return pd.read_csv(path)
+
+    elif suffix == ".gz":
+        # GZIP magic number check
+        with open(path, "rb") as f:
+            magic = f.read(2)
+        if magic != b"\x1f\x8b":
+            raise ValueError("File has .gz extension but is not a valid gzip file")
+        return pd.read_csv(path, compression="gzip")
+
+    else:
+        raise ValueError(f"Unsupported file type: {suffix}")
+    
+    
