@@ -18,7 +18,7 @@ default_args = {
 }
 
 @dag(
-    dag_id='extract_transform_manual',
+    dag_id='extract_enrich_backfill',
     start_date=datetime(2025, 5, 1),
     schedule=None,
     catchup=False,

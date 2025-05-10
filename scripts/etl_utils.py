@@ -96,26 +96,24 @@ def load_raw_data(symbol, interval, data_dir=Path("data")) -> pd.DataFrame:
 
 
 def read_auto_file(path: Path) -> pd.DataFrame:
-    """Support for CSV, CSV+GZIP, Parquet"""
+    
+    path = Path(path)  # fix for airflow
     
     if not path.exists():
-        raise FileNotFoundError(f"{path} not found")
+        raise FileNotFoundError(f"{path.resolve()} not found")
 
     suffix = path.suffix.lower()
 
     if suffix == ".parquet":
         return pd.read_parquet(path)
 
-    elif suffix == ".csv":
-        return pd.read_csv(path)
-
-    elif suffix == ".gz":
-        # GZIP magic number check
+    elif suffix in {".csv", ".gz"}:
+        # Read first 2 bytes to detect gzip
         with open(path, "rb") as f:
             magic = f.read(2)
-        if magic != b"\x1f\x8b":
-            raise ValueError("File has .gz extension but is not a valid gzip file")
-        return pd.read_csv(path, compression="gzip")
+
+        compression = "gzip" if magic == b"\x1f\x8b" else None
+        return pd.read_csv(path, compression=compression)
 
     else:
         raise ValueError(f"Unsupported file type: {suffix}")

@@ -2,14 +2,11 @@ import pandas as pd
 from pathlib import Path
 from scripts.ta_indicators import daily_log_return, get_all_indicators
 
-import importlib
-import scripts.etl_utils
-importlib.reload(scripts.etl_utils)
-
 from scripts.etl_utils import read_auto_file
 
 # (DONE) working
-# (TODO) logging, compress logic, 
+# (TODO) logging, compress logic,
+
 def transform_stock_data(symbol, interval, **kwargs):
     
     symbol = symbol.upper()

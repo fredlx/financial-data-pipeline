@@ -63,10 +63,12 @@ def save_stock_data(df, symbol, interval, compress=True):
     output_dir = project_root / "data" / symbol / "raw"
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    suffix = ".csv.gz" if compress else ".csv"
-    output_path = output_dir / f"{symbol}_{interval}_raw{suffix}"
-    
-    df.to_csv(output_path, index=False, compression='gzip' if compress else None)
+    output_path = output_dir / f"{symbol}_{interval}_raw"
+    full_path = output_path.with_suffix(".csv.gz") if compress else output_path.with_suffix(".csv")
+    df.to_csv(
+        full_path, 
+        index=False, 
+        compression='gzip' if compress else None)
     
     # Save metadata
     meta = load_metadata()
@@ -75,4 +77,4 @@ def save_stock_data(df, symbol, interval, compress=True):
     
     print(f"[SAVE] {symbol} → {output_path.name} ({len(df)} rows)")
     
-    return output_path
+    return str(full_path)  # no Path, for airflow

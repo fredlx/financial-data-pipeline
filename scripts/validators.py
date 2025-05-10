@@ -4,15 +4,20 @@ import pandas_market_calendars as mcal
 
 
 # @task: validate_data (full_year)
-def validate_missing_time_full_year(df, date_col='date', freq='D'):  # 15T, 30T, D
-    
+# 15T, 30T, D    
+def validate_missing_time_full_year(df, date_col='date', freq='D'):
     df[date_col] = pd.to_datetime(df[date_col])
     df = df.sort_values(date_col)
-    
-    expected = pd.date_range(start=df[date_col].min(), end=df[date_col].max(), freq=freq)
+
     actual = df[date_col].dt.round(freq).drop_duplicates()
-    
+    expected = pd.date_range(start=actual.min(), end=actual.max(), freq=freq)
+
     missing = expected.difference(actual)
+
+    # If only the last timestamp is missing, skip it
+    if len(missing) == 1 and missing[0] == expected[-1]:
+        return []
+
     return missing.to_list()
 
 
@@ -27,7 +32,7 @@ def validate_missing_time_trading_days(df, date_col='date', freq='D', calendar='
 
     if freq == 'D':
         # Use trading days only (normalize both datetime at midnight just in case)
-        expected = schedule.index.normalize()
+        expected = schedule.index.normalize()[:-1]
         actual = df[date_col].dt.normalize().unique()
     else:
         # Intraday validation on trading days (15T, 30T)
@@ -35,10 +40,15 @@ def validate_missing_time_trading_days(df, date_col='date', freq='D', calendar='
         for _, row in schedule.iterrows():
             intraday = pd.date_range(start=row['market_open'], end=row['market_close'], freq=freq)
             expected.extend(intraday)
-        expected = pd.to_datetime(expected)
+        expected = pd.to_datetime(expected)[:-1]
         actual = df[date_col].dt.round(freq).drop_duplicates()
 
     missing = pd.DatetimeIndex(expected).difference(actual)
+    
+    # If only the last timestamp is missing, skip it
+    if len(missing) == 1 and missing[0] == expected[-1]:
+        return []
+    
     return missing.to_list()
 
 
