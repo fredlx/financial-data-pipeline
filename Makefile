@@ -8,7 +8,7 @@ PIP := $(VENV)/bin/pip
 export AIRFLOW_HOME := $(AIRFLOW_DIR)
 export AIRFLOW__CORE__LOAD_EXAMPLES=False  # no examples
 
-.PHONY: init sync run stop clean
+.PHONY: init sync run stop clean clean-data clean-logs refresh soft-purge full-reset check-env kill-examples purge-dag-runs clean-history
 
 init:
 	@echo "Creating virtualenv and installing requirements..."
@@ -46,21 +46,7 @@ sync:
 run: sync
 	@echo "Starting Airflow standalone (webserver + scheduler)..."
 	PYTHONPATH=$(CURDIR) AIRFLOW_HOME=$(AIRFLOW_DIR) $(PYTHON) -m airflow standalone
-
-stop:
-	@echo "Stopping all Airflow processes..."
-	#pkill -f "airflow" || true
-	pkill -f "airflow webserver" || true
-	pkill -f "airflow scheduler" || true
-	pkill -f "airflow triggerer" || true
 	
-	# Option 1: Kill gunicorns that listen on 8793/8794
-	lsof -ti:8793 | xargs -r kill -9 || true
-	lsof -ti:8794 | xargs -r kill -9 || true
-	
-	# Option 2: for windows WSL-safe
-	#ss -ltnp | grep 8793 | awk -F 'pid=' '{print $2}' | cut -d, -f1 | xargs -r kill -9 || true
-	#ss -ltnp | grep 8794 | awk -F 'pid=' '{print $2}' | cut -d, -f1 | xargs -r kill -9 || true
 
 clean-data:
 	@read -p "This will delete all contents in data/. Continue? [y/N] " confirm && \
@@ -70,6 +56,22 @@ clean-data:
 	else \
 		echo "Cancelled."; \
 	fi
+
+clean-logs:
+	@echo "Cleaning all Airflow logs..."
+	@rm -rf $(AIRFLOW_DIR)/logs/*
+	@echo "All Airflow logs deleted from: $(AIRFLOW_DIR)/logs"
+
+purge-dag-runs:
+	@echo "Purging all DAG runs and task instances from metadata DB..."
+	@$(PYTHON) -m airflow dags delete extract_enrich_backfill --yes || true
+	@echo "Reimporting DAG by refreshing file timestamps..."
+	@find $(AIRFLOW_DIR)/dags -name "*.py" -exec touch {} +
+
+clean-history: clean-logs purge-dag-runs
+	@echo "Cleanning logs/ folder and Purging DAG runs and task instances from metadata DB..."
+
+
 
 refresh:
 	find dags -name "*.py" -exec touch {} +
@@ -85,3 +87,28 @@ soft-purge: stop
 full-reset:
 	@echo "Full reset: removing environment and Airflow home at: $(AIRFLOW_DIR)"
 	rm -rf $(AIRFLOW_DIR) $(VENV)
+
+
+stop:
+	@echo "Stopping all Airflow processes safely (WSL workaround)..."
+	@bash -c 'sleep 0.1 && pkill -f "airflow webserver"' &
+	@bash -c 'sleep 0.1 && pkill -f "airflow scheduler"' &
+	@bash -c 'sleep 0.1 && pkill -f "airflow triggerer"' &
+	@bash -c 'sleep 0.1 && lsof -ti:8793 | xargs -r kill -9 || true' &
+	@bash -c 'sleep 0.1 && lsof -ti:8794 | xargs -r kill -9 || true' &
+	@sleep 0.5  # give subprocesses time to act
+
+clean:
+	@echo "Cleaning up Airflow logs and PIDs..."
+	@rm -rf airflow/logs/*
+	@rm -f airflow/airflow-webserver.pid
+	@rm -f airflow/airflow-scheduler.pid
+
+#start:
+#	@echo "Starting Airflow processes..."
+#	@airflow db upgrade
+#	@airflow scheduler > logs/scheduler.log 2>&1 &
+#	@airflow webserver --port 8793 > logs/webserver.log 2>&1 &
+
+restart: stop clean run
+	@echo "Airflow restarted."

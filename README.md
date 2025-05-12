@@ -48,7 +48,25 @@ Workflow:
 - make run
 
 
-# Notes on data structure
-- Extracts raw to csv
-- Load csv, enrich data and save to csv.gz (compressed)
-- Loads csv.gz and partitions by year/month to parquet
+# Know issues 
+
+(WSL + Airflow + Pyarrow)
+1. WSL (resource limits by default)
+    - WSL2 will use all available RAM unless .wslconfig is set
+    - When it runs out, the kernel kills processes with SIGKILL (your Airflow task)
+2. Airflow running Python tasks inside WSL
+    - Airflow tasks are independent processes, and each may load large DataFrames
+    - If not carefully managed, each task can consume >1GB easily (especially on to_parquet())
+3. pyarrow writing partitioned Parquet files
+    - df.to_parquet(..., partition_cols=...) can trigger internal parallelism + memory usage spikes
+For large DataFrames (even 500MB+), this is enough to OOM WSL without swap
+
+Solutions: 
+- stick to csv
+- parquet without partition (use only monthly folders but no Pyarrow partition_cols)
+- Reduce memory load by processing only 1 year of data per task (also headaches...)
+
+
+# move heavy imports and I/O operations inside functions
+- yfinance
+- 

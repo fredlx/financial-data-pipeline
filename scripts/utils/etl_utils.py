@@ -100,9 +100,14 @@ def save_metadata(meta: dict):
     with open(META_FILE, 'w') as f:
         json.dump(meta, f, indent=2)
 
-def update_metadata(time_series, interval, meta, meta_key):
+def update_metadata(time_series, symbol, interval):
     if time_series.empty:
         raise ValueError("Time series is empty — cannot update metadata.")
+    
+    meta = load_metadata()
+    meta_key = f"{symbol}_{interval}"
+    
+    time_series = pd.to_datetime(time_series)
     last_dt = time_series.max()
     last_date_str = last_dt.strftime('%Y-%m-%d %H:%M') if is_intraday(interval) else last_dt.strftime('%Y-%m-%d')
     meta[meta_key] = {"last_date": last_date_str}

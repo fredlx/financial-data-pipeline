@@ -1,7 +1,7 @@
 import pandas as pd
-import yfinance as yf
+#import yfinance as yf
 from pathlib import Path
-from scripts.utils.etl_utils import load_metadata, update_metadata
+#from scripts.utils.etl_utils import load_metadata, update_metadata
 
 def fetch_stock_data(
     symbol, 
@@ -15,6 +15,8 @@ def fetch_stock_data(
     Returns stock data from yfinance
     Period is omitted if start and end dates provided
     """
+    import yfinance as yf  # DAG-slowdown offender
+    
     symbol = symbol.upper()
     
     print(f"[FETCH] Downloading {symbol}")
@@ -63,6 +65,8 @@ def save_stock_data(df, symbol, interval, compress=True):
         compression='gzip' if compress else None)
     
     # Save metadata
+    from scripts.utils.etl_utils import load_metadata, update_metadata  # for airflow
+    
     meta = load_metadata()
     meta_key = f"{symbol}_{interval}"
     update_metadata(df['date'], interval, meta, meta_key)
@@ -70,3 +74,4 @@ def save_stock_data(df, symbol, interval, compress=True):
     print(f"[SAVE] {symbol} → {full_file_path.name} ({len(df)} rows)")
     
     return str(full_file_path)  # no Path, for airflow
+

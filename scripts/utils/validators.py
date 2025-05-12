@@ -1,5 +1,5 @@
 import pandas as pd
-import pandas_market_calendars as mcal
+#import pandas_market_calendars as mcal  # moved inside function, because it is a time bomb for airflow
 from pathlib import Path
 
 from scripts.utils.etl_utils import yf_interval_to_pandas_freq
@@ -23,13 +23,13 @@ def validate_missing_time_full_year(df, date_col='date', freq='D'):
     return missing.to_list()
 
 
-def validate_missing_time_trading_days(df, date_col='date', freq='D', calendar='NYSE'):
+def validate_missing_time_trading_days(df, cal, date_col='date', freq='D'):
     """Checks for missing days in a trading calendar year"""
     
     df[date_col] = pd.to_datetime(df[date_col])
     df = df.sort_values(date_col)
     
-    cal = mcal.get_calendar(calendar)
+    #cal = mcal.get_calendar(calendar)
     schedule = cal.schedule(start_date=df[date_col].min().date(), end_date=df[date_col].max().date())
 
     if freq == 'D':
@@ -54,7 +54,7 @@ def validate_missing_time_trading_days(df, date_col='date', freq='D', calendar='
     return missing.to_list()
 
 
-def validate_time_series(df, interval, use_calendar=True, date_col='date'):
+def validate_time_series(df, interval, use_calendar=True, date_col='date', calendar="NYSE"):
     """
     Checks for missing days in both year/trading calendar.
     Accepts interval and converts to frequency
@@ -64,7 +64,9 @@ def validate_time_series(df, interval, use_calendar=True, date_col='date'):
     freq = yf_interval_to_pandas_freq(interval)
     
     if use_calendar:
-        missing = validate_missing_time_trading_days(df, date_col, freq)
+        import pandas_market_calendars as mcal  # moved because it is a expensive import
+        cal = mcal.get_calendar(calendar)
+        missing = validate_missing_time_trading_days(df, cal, date_col, freq)
     else:
         missing = validate_missing_time_full_year(df, date_col, freq)
         

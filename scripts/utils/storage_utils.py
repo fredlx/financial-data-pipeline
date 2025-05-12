@@ -1,141 +1,121 @@
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
+import shutil
 
 
-def _merge_and_save(path: Path, df_new: pd.DataFrame) -> pd.DataFrame:
-    """
-    Atomic writes
-    File corruption check before overwrite
-    Post-write integrity validation
-    Safe skip for empty DataFrames (non trading days)
-    """
+def save_parquet(df, base_file_path, compress):
     
-    if df_new.empty:
-        print(f"Skipping empty input for: {path}")
-        return
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    if path.exists():
-        if path.stat().st_size < 8:
-            print(f"Deleting corrupt file before overwrite: {path}")
-            path.unlink()
-            df = df_new
-        else:
-            df_old = pd.read_parquet(path)
-            df = pd.concat([df_old, df_new])
-            df = df.drop_duplicates(subset="date", keep="last")
-    else:
-        df = df_new
-
-    df = df.sort_values("date")
-    df = df.drop(columns=["year", "month"], errors="ignore")
-
-    # Atomic write: write to .tmp and rename
-    tmp_path = path.with_suffix(".tmp")
-    df.to_parquet(tmp_path, index=False, compression="snappy")
-
-    try:
-        pd.read_parquet(tmp_path, columns=["date"])  # integrity check
-    except Exception as e:
-        raise RuntimeError(f"File integrity check failed for {tmp_path}: {e}")
-
-    tmp_path.rename(path)
-    print(f"Atomically wrote to {path} with {len(df)} total rows")
-    return df
-
-
-# v2: accepts csv.gz
-def save_partition_hybrid(file_path: str, symbol: str, interval: str):
-    """
-    Accepts a compressed CSV file, normalizes and partitions data into Parquet files:
-    - All previous years => one file per year
-    - Current year => one file per month
-    """
-    # Load enriched data from CSV
-    df_new = pd.read_csv(file_path, compression="gzip")
+    compression = "snappy" if compress else None
+    filename_ext = ".parquet"
     
-    # Normalize date and extract time components
-    df_new["date"] = pd.to_datetime(df_new["date"])
-    df_new["year"] = df_new["date"].dt.year
-    df_new["month"] = df_new["date"].dt.month
-
-    # Prepare paths
-    base_path = Path(f"data/{symbol}/processed")
-    base_filename = f"{symbol}_{interval}_processed"
-    current_year = datetime.now().year
-
-    # Partition logic
-    for year in df_new["year"].unique():
-        df_year = df_new[df_new["year"] == year]
-        if year == current_year:
-            for month in df_year["month"].unique():
-                df_month = df_year[df_year["month"] == month]
-                month_str = f"{year}-{month:02d}"
-                path = base_path / f"{base_filename}_{month_str}.parquet"
-                _merge_and_save(path, df_month)
-        else:
-            path = base_path / f"{base_filename}_{year}.parquet"
-            _merge_and_save(path, df_year)
-
-
-
-# v1: accepts parquet
-def save_partition_hybrid_parquet(file_path: str, symbol: str, interval: str):
-    """Partitions by year, except current year: monthly partitions"""
-    df_new = pd.read_parquet(file_path)
+    base_file_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path = Path(base_file_path).with_suffix(filename_ext)
     
-    base_path = Path(f"data/{symbol}/processed")
-    base_filename = f"{symbol}_{interval}_processed"
+    df.to_parquet(output_path, index=False, engine="pyarrow", compression=compression)
     
-    df_new["date"] = pd.to_datetime(df_new["date"])
-    df_new["year"] = df_new["date"].dt.year
-    df_new["month"] = df_new["date"].dt.month
-
-    current_year = datetime.now().year
-
-    for year in df_new["year"].unique():
-        df_year = df_new[df_new["year"] == year]
-        if year == current_year:
-            # partition by month
-            for month in df_year["month"].unique():
-                df_month = df_year[df_year["month"] == month]
-                month_str = f"{year}-{month:02d}"
-                path = base_path / f"{base_filename}_{month_str}.parquet"
-                _merge_and_save(path, df_month)
-        else:
-            # partition by year
-            path = base_path / f"{base_filename}_{year}.parquet"
-            _merge_and_save(path, df_year)
-            
-            
-
-def merge_monthly_to_yearly(symbol: str, interval: str, year: int, delete_monthly: bool = False):
-    
-    base_path = Path(f"data/{symbol}/processed")
-    base_filename = f"{symbol}_{interval}"
-    monthly_files = sorted(base_path.glob(f"*{year}-*.parquet"))
-
-    if not monthly_files:
-        raise FileNotFoundError(f"No monthly files found for {symbol} in {year}")
-
-    all_months = []
-    for file in monthly_files:
-        df = pd.read_parquet(file)
-        all_months.append(df)
-
-    df_year = pd.concat(all_months)
-    df_year = df_year.drop_duplicates(subset="date", keep="last").sort_values("date")
-
-    output_path = base_path / f"{base_filename}_{year}.parquet"
-    df_year.to_parquet(output_path, index=False, compression="snappy")
-
-    print(f"Merged {len(monthly_files)} files into {output_path}")
-
-    if delete_monthly:
-        for file in monthly_files:
-            file.unlink()
-        print(f"Deleted {len(monthly_files)} monthly files for {year}")
-
     return output_path
+
+
+def save_csv(df, base_file_path, compress):
+    
+    compression = "gzip" if compress else None
+    filename_ext = ".csv.gz" if compress else ".csv"
+    
+    base_file_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path = Path(base_file_path).with_suffix(filename_ext)
+
+    df.to_csv(output_path, index=False, compression=compression)
+    
+    return output_path
+
+
+def save_monthly_parquet(df, symbol: str, interval: str, compress: bool):
+    """
+    WSL-airflow friendly
+    Saves one Parquet file per (year, month) in the format:
+    {symbol}_{interval}_{yyyy-mm}.parquet
+    """
+
+    df['date'] = pd.to_datetime(df['date'])
+    df['year'] = df['date'].dt.year
+    df['month'] = df['date'].dt.month
+    
+    base_path = Path(f"data/{symbol}/{interval}")
+    
+    compression = "snappy" if compress else None
+
+    for (year, month), group in df.groupby(["year", "month"]):
+        base_path.mkdir(parents=True, exist_ok=True)
+        filename = f"{symbol}_{interval}_{year}-{month:02d}.parquet"
+        
+        full_path = base_path / filename
+        group.drop(columns=["year", "month"]).to_parquet(full_path, index=False, engine="pyarrow", compression=compression)
+
+
+
+
+# ------------- PARTITION ---------------
+# too much headaches with this WSL, Airflow, Pyarrow setup
+
+def safe_partition(input_path, output_base_path):
+    """
+    Reduce memory load by processing only 1 year of data per task
+    Avoids memory spikes, write collisions, or race conditions
+    PyArrow should handle small batch writes safely in WSL without triggering SIGKILL
+    
+    """
+    
+    df = pd.read_parquet(input_path)
+    
+    # Normalize date and extract year, month
+    df['date'] = pd.to_datetime(df['date'])
+    df['year'] = df['date'].dt.year
+    df['month'] = df['date'].dt.month
+    
+    output_base_path.mkdir(parents=True, exist_ok=True)
+
+    # v1: for loop + unique and mask (less efficient)
+    #for year in df['year'].unique():
+    #    df_year = df[df['year'] == year]
+    
+    # v2: for and groupby
+    for year, df_year in df.groupby('year'):
+        
+        # Write to a year-specific temp folder to keep writes isolated
+        year_path = output_base_path / f"tmp_write_{year}"
+        year_path.mkdir(parents=True, exist_ok=True)
+        
+        df_year.to_parquet(
+            year_path,
+            partition_cols=["year", "month"],
+            engine="pyarrow",
+            compression="snappy",
+            index=False
+        )
+        
+        # Move results to final folder after successful write
+        for subdir in year_path.glob("year=*"):
+                final_dest = output_base_path / subdir.name
+                if final_dest.exists():
+                    # (TODO) skip if exists? Now, it overwrites
+                    for file in subdir.glob("*.parquet"):
+                        file.replace(final_dest / file.name)
+                    #shutil.rmtree(subdir)
+                else:
+                    subdir.replace(final_dest)
+            
+        # Remove temp folder
+        #shutil.rmtree(year_path)
+        
+        
+def cleanup_temps(symbol: str, interval: str):
+    """Clean up temp folders from partition operation"""
+    
+    base_path = Path(f"data/{symbol}/{interval}")
+    for tmp_dir in base_path.glob("tmp_write_*"):
+        try:
+            shutil.rmtree(tmp_dir)
+            print(f"Deleted temp folder: {tmp_dir}")
+        except Exception as e:
+            print(f"Failed to delete {tmp_dir}: {e}")

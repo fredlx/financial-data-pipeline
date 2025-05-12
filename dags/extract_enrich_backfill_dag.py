@@ -1,18 +1,18 @@
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowException
 from airflow.utils.log.logging_mixin import LoggingMixin
-from datetime import datetime, timedelta
-from config.settings import get_symbols, get_period, get_interval
-
-from scripts.extract_stock_data import fetch_stock_data, clean_stock_data, save_stock_data
-from scripts.enrich_stock_data import enrich_with_indicators, save_to_file
-
-from scripts.utils.validators import validate_time_series
-from scripts.utils.etl_utils import read_auto_file
-from scripts.utils.storage_utils import save_partition_hybrid
-
+from datetime import datetime#, timedelta
 from pathlib import Path
 import pandas as pd
+
+#from config.settings import get_symbols, get_period, get_interval
+
+#from scripts.extract_stock_data import fetch_stock_data, clean_stock_data#, save_stock_data
+#from scripts.enrich_stock_data import enrich_with_indicators
+#from scripts.utils.validators import validate_time_series
+#from scripts.utils.storage_utils import save_parquet#, save_monthly_parquet#safe_partition
+#from scripts.utils.etl_utils import update_metadata
+
 
 log = LoggingMixin().log
 
@@ -26,18 +26,32 @@ log = LoggingMixin().log
     #    "retries": 1,
     #    "retry_delay": timedelta(minutes=1)
     #    },
+    #dagrun_timeout=timedelta(minutes=5),
     tags=["stocks","backfill", "manual"]
     )
 
 def extract_enrich_backfill_dag():
-    
-    is_update = False  # for backfill
-    symbols = get_symbols(is_update)
-    period = get_period(is_update)
-    interval = get_interval(is_update)
+
+    @task
+    @task
+    def get_task_args():
+        from config.settings import get_symbols, get_period, get_interval
+        is_update = False
+        symbols = get_symbols(is_update)
+        period = get_period(is_update)
+        interval = get_interval(is_update)
+        return [
+            {"symbol": s, "period": period, "interval": interval}
+            for s in symbols
+        ]
     
     @task
     def extract_and_validate(symbol: str, period: str, interval: str):
+        
+        from scripts.extract_stock_data import fetch_stock_data, clean_stock_data
+        from scripts.utils.validators import validate_time_series
+        from scripts.utils.etl_utils import update_metadata
+        from scripts.utils.storage_utils import save_parquet
         
         # extract
         df_raw = fetch_stock_data(symbol, period, interval)
@@ -54,82 +68,54 @@ def extract_enrich_backfill_dag():
             log.warning(msg)
             #raise AirflowException(msg)
         
-        # save temp raw
-        raw_path = Path(f"data/{symbol}/raw/{symbol}_{interval}_full.parquet")
-        raw_path.parent.mkdir(parents=True, exist_ok=True)
-        df_clean.to_parquet(raw_path, index=False, engine="pyarrow")
+        # v2
+        raw_path = Path(f"data/{symbol}/raw/{symbol}_{interval}")
+        raw_file_path = save_parquet(df_clean, raw_path, compress=True)
         
-        return str(raw_path)
+        # update metadata
+        update_metadata(df_clean["date"], symbol, interval)
         
-                    
+        #return str(raw_file_path)
+        return {"file_path": str(raw_file_path), "symbol": symbol, "interval": interval}
+                     
     @task
-    def enrich(raw_path: str, symbol: str, interval: str):
+    def enrich(file_path: str, symbol: str, interval: str):
+        
+        from scripts.enrich_stock_data import enrich_with_indicators
+        from scripts.utils.storage_utils import save_parquet
         
         # Load
-        df = pd.read_parquet(raw_path)
+        df = pd.read_parquet(file_path)
 
         # Enrich
-        df_ta = enrich_with_indicators(df)
-        if df_ta.empty:
-            raise AirflowException(f"{raw_path} is empty and could not be enriched.")
+        df_enriched = enrich_with_indicators(df)
+        if df_enriched.empty:
+            raise AirflowException(f"{file_path} is empty and could not be enriched.")
         
-        # save temp processed
-        enriched_path = Path(f"data/{symbol}/enriched/{symbol}_{interval}_full.parquet")
-        enriched_path.parent.mkdir(parents=True, exist_ok=True)
-        df_ta.to_parquet(enriched_path, index=False, engine="pyarrow", compression="snappy")
+        # v2
+        enriched_path = Path(f"data/{symbol}/enriched/{symbol}_{interval}")
+        enriched_file_path = save_parquet(df_enriched, enriched_path, compress=True)
         
-        return str(enriched_path)
+        #return str(enriched_file_path)
+        return {"file_path": str(enriched_file_path), "symbol": symbol, "interval": interval}
         
-    
     @task
-    def save_partition(enriched_path: str, symbol: str, interval: str):
+    def monthly_load(file_path: str, symbol: str, interval: str):
         
-        df = pd.read_parquet(enriched_path)
-        df['date'] = pd.to_datetime(df['date'])
-        df['year'] = df['date'].dt.year
-        df['month'] = df['date'].dt.month
-        current_year = datetime.now().year
+        from scripts.utils.storage_utils import save_monthly_parquet
+        
+        df_enriched = pd.read_parquet(file_path)
+        save_monthly_parquet(df_enriched, symbol, interval, compress=True)
 
-        base_path = Path(f"data/{symbol}/final/{symbol}_{interval}")
-        
-        for year in df['year'].unique():
-            df_year = df[df['year'] == year]
-            if year == current_year:
-                # monthly partitions
-                for month in df_year['month'].unique():
-                    df_month = df_year[df_year['month'] == month]
-                    part_path = base_path / f"year={year}/month={month:02d}/{symbol}_{interval}_{year}-{month:02d}.parquet"
-                    part_path.parent.mkdir(parents=True, exist_ok=True)
-                    
-                    df_month.drop(columns=['year', 'month']).to_parquet(part_path, index=False, engine="pyarrow" ,compression="snappy")
-            else:
-                # yearly
-                part_path = base_path / f"year={year}/{symbol}_{interval}_{year}.parquet"
-                part_path.parent.mkdir(parents=True, exist_ok=True)
-                
-                df_year.drop(columns=['year', 'month']).to_parquet(part_path, index=False, engine="pyarrow", compression="snappy")
-        
-        
-    # Dynamic task mapping
-    # Pre-build shared task params
-    task_args = [
-        {"symbol": s, "period": period, "interval": interval}
-        for s in symbols]
-
+  
     # Task flow
+    
+    task_args = get_task_args()
     extracted = extract_and_validate.expand_kwargs(task_args)
-    enriched = enrich.expand(
-        raw_path=extracted,
-        symbol=[d["symbol"] for d in task_args],
-        interval=[d["interval"] for d in task_args]
-        )
-    partitioned = save_partition.expand(
-        enriched_path=enriched,
-        symbol=[d["symbol"] for d in task_args],
-        interval=[d["interval"] for d in task_args]
-        )
+    enriched = enrich.expand_kwargs(extracted)
+    monthly_load.expand_kwargs(enriched)
 
     # for clarity
-    extracted >> enriched >> partitioned
+    #extracted >> enriched
 
 dag = extract_enrich_backfill_dag()

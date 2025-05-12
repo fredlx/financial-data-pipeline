@@ -1,10 +1,12 @@
 import pandas as pd
 from pathlib import Path
-from scripts.ta_indicators import daily_log_return, get_all_indicators
+#from scripts.ta_indicators import daily_log_return, get_all_indicators
 #from scripts.utils.etl_utils import read_auto_file
 
 
 def enrich_with_indicators(df):
+    
+    from scripts.ta_indicators import daily_log_return, get_all_indicators
     
     # Normalize
     df['date'] = pd.to_datetime(df['date'])
