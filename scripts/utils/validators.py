@@ -1,11 +1,13 @@
 import pandas as pd
 import pandas_market_calendars as mcal
+from pathlib import Path
 
+from scripts.utils.etl_utils import yf_interval_to_pandas_freq
 
-
-# @task: validate_data (full_year)
-# 15T, 30T, D    
+  
 def validate_missing_time_full_year(df, date_col='date', freq='D'):
+    """Checks for missing days in a year"""
+    
     df[date_col] = pd.to_datetime(df[date_col])
     df = df.sort_values(date_col)
 
@@ -21,8 +23,8 @@ def validate_missing_time_full_year(df, date_col='date', freq='D'):
     return missing.to_list()
 
 
-# @task: validate_data (use trading calendar)
 def validate_missing_time_trading_days(df, date_col='date', freq='D', calendar='NYSE'):
+    """Checks for missing days in a trading calendar year"""
     
     df[date_col] = pd.to_datetime(df[date_col])
     df = df.sort_values(date_col)
@@ -52,14 +54,43 @@ def validate_missing_time_trading_days(df, date_col='date', freq='D', calendar='
     return missing.to_list()
 
 
-def validate_time_series(df, date_col='date', freq='D', use_calendar=True):
+def validate_time_series(df, interval, use_calendar=True, date_col='date'):
+    """
+    Checks for missing days in both year/trading calendar.
+    Accepts interval and converts to frequency
+    """
+    
+    # convert yfinance interval to pandas frequency
+    freq = yf_interval_to_pandas_freq(interval)
     
     if use_calendar:
         missing = validate_missing_time_trading_days(df, date_col, freq)
     else:
         missing = validate_missing_time_full_year(df, date_col, freq)
         
-    if missing:
-        raise Exception(f"{len(missing)} missing timestamps. Example: {missing[:5]}") 
+    #if missing:
+    #    raise Exception(f"{len(missing)} missing timestamps. Example: {missing[:5]}") 
         
     return missing
+
+
+def get_existing_dates(symbol, interval, year, month=None):
+    """
+    storage_check for processed parquet files
+    Usage: date(2025, 5, 9) in existing
+    """
+    
+    base_path = Path(f"data/{symbol}/processed")
+    
+    if month:
+        filename = f"{symbol}_{interval}_{year}-{month:02d}.parquet"
+    else:
+        filename = f"{symbol}_{interval}_{year}.parquet"
+
+    path = base_path / filename
+    if not path.exists():
+        return set()
+
+    df = pd.read_parquet(path, columns=["date"])
+    df["date"] = pd.to_datetime(df["date"]).dt.date
+    return set(df["date"])

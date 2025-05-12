@@ -4,7 +4,7 @@
 
 from airflow.decorators import dag, task
 from datetime import datetime, timedelta
-from scripts.etl_utils import extract_data, enrich_data, merge_and_save
+from scripts.utils.etl_utils import extract_data, enrich_data, merge_and_save
 
 from config.settings import get_symbols, get_period, get_interval
 

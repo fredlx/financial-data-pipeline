@@ -9,6 +9,35 @@ def is_intraday(interval: str) -> bool:
     return interval in {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h"}
 
 
+def yf_interval_to_pandas_freq(yf_interval: str) -> str:
+    """
+    Convert yfinance interval (e.g. '15m', '1d') to pandas frequency string (e.g. '15T', 'D')
+    """
+    yf_interval = yf_interval.lower().strip()
+
+    mapping = {
+        "1m": "T",     # minute
+        "2m": "2T",
+        "5m": "5T",
+        "15m": "15T",
+        "30m": "30T",
+        "60m": "60T",
+        "90m": "90T",
+        "1h": "60T",
+        "1d": "D",
+        "5d": "5D",
+        "1wk": "W",
+        "1mo": "M",
+        "3mo": "3M",
+    }
+
+    if yf_interval not in mapping:
+        raise ValueError(f"Unsupported yfinance interval: '{yf_interval}'")
+
+    return mapping[yf_interval]
+
+
+# (NOTUSED)
 def infer_interval_from_series(time_series: pd.Series):
     """Infer interval from time series. Returns (label, timedelta)."""
     s = time_series.sort_values()
@@ -82,22 +111,10 @@ def update_metadata(time_series, interval, meta, meta_key):
 
 # ---------- FILE LOAD HELPERS ----------
 
-def load_raw_data(symbol, interval, data_dir=Path("data")) -> pd.DataFrame:
-    
-    base = data_dir / symbol / "raw" / f"{symbol}_{interval}_raw"
-    
-    for ext in [".parquet", ".csv.gz", ".csv"]:
-        path = base.with_suffix(ext)
-        
-        if path.exists():
-            return read_auto_file(path)
-    
-    raise FileNotFoundError(f"No raw file found for {symbol} with interval {interval}")
-
 
 def read_auto_file(path: Path) -> pd.DataFrame:
     
-    path = Path(path)  # fix for airflow
+    path = Path(path)  # fix for/from airflow
     
     if not path.exists():
         raise FileNotFoundError(f"{path.resolve()} not found")

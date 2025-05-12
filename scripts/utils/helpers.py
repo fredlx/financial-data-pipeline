@@ -20,6 +20,7 @@ def safe_eval_series(series: pd.Series) -> pd.Series:
 def get_max_window(series, delta=10):
     return pd.Series(series.explode(), dtype="float").max() + delta
 
+
 def get_timestamps(datetime_series: pd.Series):
     """Returns earliest and latest datetimes (news) as string like '20240419T153015'."""
     datetime_series = pd.to_datetime(datetime_series)  # ensure datetime object
@@ -30,7 +31,7 @@ def get_file_size_mb(file_path):
     """Returns file size in MB"""
     return round(os.path.getsize(file_path)/1048576,2)
 
-
+# (NOTUSED) for save_df_to_csv
 def normalize_type_for_schema(series: pd.Series) -> str:
     """
     Normalizes pandas dtype for clean schema output to be used outside of Python
@@ -63,7 +64,7 @@ def normalize_type_for_schema(series: pd.Series) -> str:
     else:
         return "object"
 
-
+# (NOTUSED) for save_df_to_csv
 def save_schema(
     df, 
     output_path, 
@@ -116,7 +117,7 @@ def save_schema(
 
     print(f"Schema saved to {schema_path}")
 
-
+# (NOTUSED)
 def save_df_to_csv(
     df,
     output_path,

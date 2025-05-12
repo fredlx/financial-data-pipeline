@@ -1,13 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from scripts.ta_indicators import daily_log_return, get_all_indicators
-from scripts.etl_utils import read_auto_file
-
-
-# (REMOVE) use read_auto_file directly
-def load_file(file_path):
-    df = read_auto_file(file_path)
-    return df
+#from scripts.utils.etl_utils import read_auto_file
 
 
 def enrich_with_indicators(df):
@@ -30,7 +24,7 @@ def enrich_with_indicators(df):
     return df_ta
 
 
-def save_to_file(df, symbol, interval, data_folder="processed", file_format="parquet", compress=True):
+def save_to_file(df, symbol, interval, data_folder="processed", file_format="csv", compress=True):
     
     symbol = symbol.upper()
     

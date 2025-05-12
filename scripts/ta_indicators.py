@@ -1,9 +1,23 @@
-import ta
 import pandas as pd
 import ast
+import ta
+from config.settings import get_ta_params_file
 
-# (TODO) refactor hardcoding
-ta_params_path = "ta_params.csv"
+TA_PARAMS_PATH= get_ta_params_file()#"ta_params.csv"
+
+# ---------- HELPERS ----------
+
+# keep it here for self contained script
+def safe_eval_series(series: pd.Series) -> pd.Series:
+    
+    def safe_eval(val):
+        try:
+            return ast.literal_eval(val) if pd.notna(val) else () # None
+        except Exception:
+            return () # None
+    
+    return series.map(safe_eval)
+
 
 def get_ta_params(ta_params_path, default_params=True):
     params_col = "params_default" if default_params else "params_custom"
@@ -21,6 +35,7 @@ def get_prices(df):
     volume = df["volume"]
     return open, high, low, close, volume
 
+# (NOTUSED)
 def get_names(df_params):
     """Returns {short_name: name} mapping from ta_params.csv"""
     try:
@@ -30,15 +45,8 @@ def get_names(df_params):
         raise RuntimeError(f"Failed to load names: {e}")
     
     
-def safe_eval(val):
-    try:
-        return ast.literal_eval(val) if pd.notna(val) else () # None
-    except Exception:
-        return () # None
-    
-def safe_eval_series(series: pd.Series) -> pd.Series:
-    return series.map(safe_eval)
 
+# ---------- INDICATORS ----------
 
 ### MOMENTUM ###
 
@@ -392,11 +400,7 @@ def daily_return(close, fillna=False):
 def get_all_indicators(df_orig, default_params=False, resize_df=False):
     """Returns df with indicators considering csv with params"""
     
-    ta_params_df = get_ta_params(ta_params_path, default_params=True)
-    
-    #params_col = "params_default" if default_params else "params_custom"
-    #ta_params_df = pd.read_csv("ta_params.csv", encoding="utf-8-sig", index_col="short_name")[params_col]
-    #ta_params_df = safe_eval_series(ta_params_df)
+    ta_params_df = get_ta_params(ta_params_path=TA_PARAMS_PATH, default_params=True)
     
     def get_max_window(series, delta=10):
         return pd.Series(series.explode(), dtype="float").max() + delta

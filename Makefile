@@ -65,7 +65,7 @@ stop:
 clean-data:
 	@read -p "This will delete all contents in data/. Continue? [y/N] " confirm && \
 	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
-		echo "🧹 Deleting data/* ..."; \
+		echo "Deleting data/* ..."; \
 		rm -rf data/*; \
 	else \
 		echo "Cancelled."; \
@@ -79,7 +79,7 @@ soft-purge: stop
 	find . -type d -name "__pycache__" -exec rm -r {} +
 	find dags -name "*.pyc" -delete
 	rm -rf $(AIRFLOW_HOME)/logs/*
-	touch dags/extract_enrich_backfill_dag.py
+	find dags -name "*.py" -exec touch {} +
 
 #full-reset: stop
 full-reset:
