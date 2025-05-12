@@ -14,11 +14,11 @@ def load_config(filename="config.ini", folder="config"):
 
 config = load_config()
 
-
+# Get custom/default params
 def get_ta_params_file():
     return config["TA_PARAMS"]["filepath"]
 
-
+# Get symbols, period and interval for extractions
 def _get(section: str, key: str):
     return config[section][key]
 
@@ -31,3 +31,8 @@ def get_period(is_update: bool =True):
 
 def get_interval(is_update: bool =True):
     return _get("UPDATE" if is_update else "BACKFILL", "interval")
+
+
+# Get metadata filepath
+def get_metadata_file():
+    return config["METADATA"]["filepath"]

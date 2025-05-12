@@ -1,21 +1,24 @@
 import pandas as pd
-#import yfinance as yf
 from pathlib import Path
+#import yfinance as yf
 #from scripts.utils.etl_utils import load_metadata, update_metadata
+
+import logging
+log = logging.getLogger("airflow.task")
 
 def fetch_stock_data(
     symbol, 
     period='10y', 
     interval='1d', 
     start_date=None, 
-    end_date=None, 
-    **kwargs
+    end_date=None
     ):
     """
     Returns stock data from yfinance
     Period is omitted if start and end dates provided
     """
-    import yfinance as yf  # DAG-slowdown offender
+    
+    import yfinance as yf
     
     symbol = symbol.upper()
     
@@ -46,32 +49,3 @@ def clean_stock_data(df):
         raise ValueError(f"No data")
     
     return df
-
-
-def save_stock_data(df, symbol, interval, compress=True):
-    
-    symbol = symbol.upper()
-    
-    project_root = Path(__file__).resolve().parents[1]
-    base_path = project_root / "data" / symbol / "raw"
-    base_path.mkdir(parents=True, exist_ok=True)
-    file_path = base_path / f"{symbol}_{interval}_raw"
-    full_file_path = file_path.with_suffix(".csv.gz") if compress else file_path.with_suffix(".csv")
-    
-    # Save csv
-    df.to_csv(
-        full_file_path, 
-        index=False, 
-        compression='gzip' if compress else None)
-    
-    # Save metadata
-    from scripts.utils.etl_utils import load_metadata, update_metadata  # for airflow
-    
-    meta = load_metadata()
-    meta_key = f"{symbol}_{interval}"
-    update_metadata(df['date'], interval, meta, meta_key)
-    
-    print(f"[SAVE] {symbol} → {full_file_path.name} ({len(df)} rows)")
-    
-    return str(full_file_path)  # no Path, for airflow
-

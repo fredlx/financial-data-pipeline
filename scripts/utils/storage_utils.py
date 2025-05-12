@@ -2,9 +2,15 @@ import pandas as pd
 from pathlib import Path
 from datetime import datetime
 import shutil
+import hashlib
+
+from config.constants import DEFAULT_HASH_ALGO
+
+import logging
+log = logging.getLogger("airflow.task")
 
 
-def save_parquet(df, base_file_path, compress):
+def save_parquet(df, base_file_path, compress, hash_algo=DEFAULT_HASH_ALGO):
     
     compression = "snappy" if compress else None
     filename_ext = ".parquet"
@@ -14,10 +20,12 @@ def save_parquet(df, base_file_path, compress):
     
     df.to_parquet(output_path, index=False, engine="pyarrow", compression=compression)
     
+    log_file_summary(output_path, df_len=len(df), hash_algo=hash_algo)
+    
     return output_path
 
 
-def save_csv(df, base_file_path, compress):
+def save_csv(df, base_file_path, compress, hash_algo=DEFAULT_HASH_ALGO):
     
     compression = "gzip" if compress else None
     filename_ext = ".csv.gz" if compress else ".csv"
@@ -27,10 +35,12 @@ def save_csv(df, base_file_path, compress):
 
     df.to_csv(output_path, index=False, compression=compression)
     
+    log_file_summary(output_path, df_len=len(df), hash_algo=hash_algo)
+    
     return output_path
 
 
-def save_monthly_parquet(df, symbol: str, interval: str, compress: bool):
+def save_monthly_parquet(df, symbol: str, interval: str, compress: bool, hash_algo: str =DEFAULT_HASH_ALGO):
     """
     WSL-airflow friendly
     Saves one Parquet file per (year, month) in the format:
@@ -52,12 +62,47 @@ def save_monthly_parquet(df, symbol: str, interval: str, compress: bool):
         full_path = base_path / filename
         group.drop(columns=["year", "month"]).to_parquet(full_path, index=False, engine="pyarrow", compression=compression)
 
+        # log
+        log_file_summary(full_path, df_len=len(group), hash_algo=hash_algo)
+
+
+def log_file_summary(file_path: Path, df_len: int = None, hash_algo: str = "sha256"):
+    """
+    Logs file size, optional row count, and optional file hash.
+    
+    Args:
+        file_path (Path): Path to the file to log.
+        df_len (int, optional): Number of rows in DataFrame (if known).
+        hash_algo (str, optional): 'sha256', 'md5', or None.
+    """
+    size_kb = file_path.stat().st_size / 1024
+
+    hash = None
+    if hash_algo:
+        algo = hash_algo.lower()
+        if algo == "sha256":
+            hash = hashlib.sha256(file_path.read_bytes()).hexdigest()
+        elif algo == "md5":
+            hash = hashlib.md5(file_path.read_bytes()).hexdigest()
+
+    message = f"Saved {file_path} ({size_kb:.1f} KB"
+    if df_len is not None:
+        message += f", {df_len} rows"
+    if hash:
+        message += f", {hash_algo.upper()}: {hash}"
+    message += ")"
+
+    log.info(message)
+
+
+
 
 
 
 # ------------- PARTITION ---------------
 # too much headaches with this WSL, Airflow, Pyarrow setup
 
+# (NOTUSED)
 def safe_partition(input_path, output_base_path):
     """
     Reduce memory load by processing only 1 year of data per task
@@ -108,7 +153,7 @@ def safe_partition(input_path, output_base_path):
         # Remove temp folder
         #shutil.rmtree(year_path)
         
-        
+# (NOTUSED)        
 def cleanup_temps(symbol: str, interval: str):
     """Clean up temp folders from partition operation"""
     

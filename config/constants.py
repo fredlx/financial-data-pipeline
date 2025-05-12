@@ -1,0 +1,1 @@
+DEFAULT_HASH_ALGO = "sha256"  # or "md5"

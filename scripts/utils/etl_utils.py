@@ -2,6 +2,8 @@ import pandas as pd
 from pathlib import Path
 import json
 
+# (TODO) move to settings/config.ini
+META_FILE = Path("data/meta/last_date_per_symbol.json")
 
 # ---------- INTERVAL HELPERS ----------
 
@@ -37,74 +39,24 @@ def yf_interval_to_pandas_freq(yf_interval: str) -> str:
     return mapping[yf_interval]
 
 
-# (NOTUSED)
-def infer_interval_from_series(time_series: pd.Series):
-    """Infer interval from time series. Returns (label, timedelta)."""
-    s = time_series.sort_values()
-    diffs = s.diff().dropna()
-
-    if diffs.empty:
-        raise ValueError("Not enough data to infer interval.")
-
-    try:
-        delta = diffs.mode()[0]
-    except IndexError:
-        delta = diffs.median()
-
-    minutes = delta.total_seconds() / 60
-
-    if minutes <= 1:
-        label = '1m'
-    elif minutes <= 2:
-        label = '2m'
-    elif minutes <= 5:
-        label = '5m'
-    elif minutes <= 15:
-        label = '15m'
-    elif minutes <= 30:
-        label = '30m'
-    elif minutes <= 60:
-        label = '60m'
-    elif minutes <= 90:
-        label = '90m'
-    elif minutes <= 1440:
-        label = '1d'
-    elif minutes <= 7200:
-        label = '5d'
-    elif minutes <= 10080:
-        label = '1wk'
-    elif minutes <= 44640:
-        label = '1mo'
-    elif minutes <= 133920:
-        label = '3mo'
-    else:
-        raise ValueError(f"Unsupported interval: {delta}")
-
-    return label#, delta
-
-
 # ---------- METADATA HELPERS ----------
 
-# (TODO) move to settings/config.ini
-META_FILE = Path("data/meta/last_date_per_symbol.json")
-
-
-def load_metadata():
-    if META_FILE.exists():
-        with open(META_FILE, 'r') as f:
+def load_metadata(meta_file_path):
+    if meta_file_path.exists():
+        with open(meta_file_path, 'r') as f:
             return json.load(f)
     return {}
 
-def save_metadata(meta: dict):
-    META_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(META_FILE, 'w') as f:
+def save_metadata(meta_file_path: str, meta: dict):
+    meta_file_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(meta_file_path, 'w') as f:
         json.dump(meta, f, indent=2)
 
-def update_metadata(time_series, symbol, interval):
+def update_metadata(time_series, symbol, interval, meta_file_path):
     if time_series.empty:
         raise ValueError("Time series is empty — cannot update metadata.")
     
-    meta = load_metadata()
+    meta = load_metadata(meta_file_path)
     meta_key = f"{symbol}_{interval}"
     
     time_series = pd.to_datetime(time_series)
@@ -116,7 +68,7 @@ def update_metadata(time_series, symbol, interval):
 
 # ---------- FILE LOAD HELPERS ----------
 
-
+# (NOTUSED)
 def read_auto_file(path: Path) -> pd.DataFrame:
     
     path = Path(path)  # fix for/from airflow

@@ -30,7 +30,7 @@ check-env:
 	@$(PYTHON) -m airflow info
 
 kill-examples:
-	@echo "Attempting to remove example DAGs..."
+	@echo "Removing example DAGs..."
 	@if $(PYTHON) -m airflow dags list | grep -q example; then \
 		for dag in $$($(PYTHON) -m airflow dags list | grep example | awk '{print $$1}'); do \
 			echo "Deleting $$dag..."; \
@@ -47,7 +47,6 @@ run: sync
 	@echo "Starting Airflow standalone (webserver + scheduler)..."
 	PYTHONPATH=$(CURDIR) AIRFLOW_HOME=$(AIRFLOW_DIR) $(PYTHON) -m airflow standalone
 	
-
 clean-data:
 	@read -p "This will delete all contents in data/. Continue? [y/N] " confirm && \
 	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
@@ -70,8 +69,6 @@ purge-dag-runs:
 
 clean-history: clean-logs purge-dag-runs
 	@echo "Cleanning logs/ folder and Purging DAG runs and task instances from metadata DB..."
-
-
 
 refresh:
 	find dags -name "*.py" -exec touch {} +

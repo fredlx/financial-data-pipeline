@@ -385,7 +385,7 @@ def wma_indicator(close, window=9, fillna=False):
     return ta.trend.wma_indicator(close, window, fillna)
 
 
-### OTHERS ###
+### RETURNS ###
 def cumulative_return(close, fillna=False):
     return ta.others.cumulative_return(close, fillna)
 
@@ -397,10 +397,10 @@ def daily_return(close, fillna=False):
 
 
 ### GET ALL INDICATORS ###
-def get_all_indicators(df_orig, default_params=False, resize_df=False):
+def get_all_indicators(df_orig, default_params=True, resize_df=False):
     """Returns df with indicators considering csv with params"""
     
-    ta_params_df = get_ta_params(ta_params_path=TA_PARAMS_PATH, default_params=True)
+    ta_params_df = get_ta_params(default_params, ta_params_path=TA_PARAMS_PATH)
     
     def get_max_window(series, delta=10):
         return pd.Series(series.explode(), dtype="float").max() + delta

@@ -1,0 +1,5 @@
+__pycache__/
+*.ipynb
+README.md
+scan_todos.py
+my_reports/

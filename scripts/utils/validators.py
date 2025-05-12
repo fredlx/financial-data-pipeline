@@ -1,9 +1,10 @@
 import pandas as pd
-#import pandas_market_calendars as mcal  # moved inside function, because it is a time bomb for airflow
 from pathlib import Path
+#import pandas_market_calendars as mcal
+#from scripts.utils.etl_utils import yf_interval_to_pandas_freq
 
-from scripts.utils.etl_utils import yf_interval_to_pandas_freq
-
+import logging
+log = logging.getLogger("airflow.task")
   
 def validate_missing_time_full_year(df, date_col='date', freq='D'):
     """Checks for missing days in a year"""
@@ -18,13 +19,17 @@ def validate_missing_time_full_year(df, date_col='date', freq='D'):
 
     # If only the last timestamp is missing, skip it
     if len(missing) == 1 and missing[0] == expected[-1]:
+        log.warning(f"Missing last timestamp: {missing[0]}")
         return []
 
     return missing.to_list()
 
 
-def validate_missing_time_trading_days(df, cal, date_col='date', freq='D'):
+def validate_missing_time_trading_days(df, calendar, date_col='date', freq='D'):
     """Checks for missing days in a trading calendar year"""
+    
+    import pandas_market_calendars as mcal
+    cal = mcal.get_calendar(calendar)
     
     df[date_col] = pd.to_datetime(df[date_col])
     df = df.sort_values(date_col)
@@ -47,8 +52,8 @@ def validate_missing_time_trading_days(df, cal, date_col='date', freq='D'):
 
     missing = pd.DatetimeIndex(expected).difference(actual)
     
-    # If only the last timestamp is missing, skip it
     if len(missing) == 1 and missing[0] == expected[-1]:
+        log.warning(f"Missing last timestamp: {missing[0]}")
         return []
     
     return missing.to_list()
@@ -60,39 +65,12 @@ def validate_time_series(df, interval, use_calendar=True, date_col='date', calen
     Accepts interval and converts to frequency
     """
     
-    # convert yfinance interval to pandas frequency
+    from scripts.utils.etl_utils import yf_interval_to_pandas_freq
     freq = yf_interval_to_pandas_freq(interval)
     
     if use_calendar:
-        import pandas_market_calendars as mcal  # moved because it is a expensive import
-        cal = mcal.get_calendar(calendar)
-        missing = validate_missing_time_trading_days(df, cal, date_col, freq)
+        missing = validate_missing_time_trading_days(df, calendar, date_col, freq)
     else:
         missing = validate_missing_time_full_year(df, date_col, freq)
-        
-    #if missing:
-    #    raise Exception(f"{len(missing)} missing timestamps. Example: {missing[:5]}") 
-        
+           
     return missing
-
-
-def get_existing_dates(symbol, interval, year, month=None):
-    """
-    storage_check for processed parquet files
-    Usage: date(2025, 5, 9) in existing
-    """
-    
-    base_path = Path(f"data/{symbol}/processed")
-    
-    if month:
-        filename = f"{symbol}_{interval}_{year}-{month:02d}.parquet"
-    else:
-        filename = f"{symbol}_{interval}_{year}.parquet"
-
-    path = base_path / filename
-    if not path.exists():
-        return set()
-
-    df = pd.read_parquet(path, columns=["date"])
-    df["date"] = pd.to_datetime(df["date"]).dt.date
-    return set(df["date"])
