@@ -7,24 +7,25 @@ import pandas as pd
 import logging
 log = logging.getLogger("airflow.task")
 
+#"email_on_failure": True,
+#"email": ["alerts@yourdomain.com"]
+
 @dag(
-    dag_id='stocks_etl_backfill',
+    dag_id='yfinance_stocks_etl_backfill',
     start_date=datetime(2025, 5, 1),
     schedule=None,
     catchup=False,
-    default_args = {
-        "owner": "airflow",
-        "retries": 1,
-        "retry_delay": timedelta(minutes=1),
-        #"email_on_failure": True,
-        #"email": ["alerts@yourdomain.com"]
-        },
+    #default_args = {
+    #    "owner": "airflow",
+    #    "retries": 1,
+    #    "retry_delay": timedelta(minutes=1),
+    #    },
     #dagrun_timeout=timedelta(minutes=5),
     tags=["stocks","backfill", "manual"]
     )
 
 
-def stocks_etl_backfill_dag():
+def yfinance_stocks_etl_backfill_dag():
     
     @task
     def get_task_args():
@@ -54,9 +55,9 @@ def stocks_etl_backfill_dag():
         
         from scripts.extract_stock_data import fetch_stock_data, clean_stock_data
         from scripts.utils.validators import validate_time_series
-        from scripts.utils.etl_utils import update_metadata
         from scripts.utils.storage_utils import save_parquet
-        from config.settings import get_metadata_file
+        from scripts.utils.etl_utils import get_last_date
+        
         
         # extract
         log.info(f"Fetching {symbol} for period {period} with interval {interval}...")
@@ -78,34 +79,43 @@ def stocks_etl_backfill_dag():
         raw_path = Path(f"data/{symbol}/raw/{symbol}_{interval}")
         raw_file_path = save_parquet(df_clean, raw_path, compress=True)
         
-        # update metadata
-        meta_file_path = get_metadata_file()
-        update_metadata(df_clean["date"], symbol, interval, meta_file_path)
+        # for metadata update
+        last_date = get_last_date(df_clean["date"], interval)
+        #meta_file_path = get_metadata_file()
+        #update_metadata_json(df_clean["date"], symbol, interval, meta_file_path)
         
-        return {"file_path": str(raw_file_path), "symbol": symbol, "interval": interval}
+        return {"file_path": str(raw_file_path), "symbol": symbol, "interval": interval, "last_date": last_date}
+    
+    @task
+    def write_metadata_entry(last_date: str, symbol: str, interval: str, file_path: str):
+        # file_path is unused but required to support .expand_kwargs from upstream task
+        
+        print(f"[DEBUG] last_date={last_date}, symbol={symbol}, interval={interval}, file_path={file_path}")
+        
+        from config.settings import get_metadata_file
+        from scripts.utils.etl_utils import update_metadata_json
+        
+        meta_file_path = get_metadata_file()
+        update_metadata_json(last_date, symbol, interval, meta_file_path)
+        
                      
     @task
-    def enrich(file_path: str, symbol: str, interval: str):
+    def enrich(file_path: str, symbol: str, interval: str, last_date: str):
+        # last_date is unused but required to support .expand_kwargs from upstream task
         
         from scripts.enrich_stock_data import enrich_with_indicators
-        from scripts.utils.storage_utils import save_parquet
+        from scripts.utils.storage_utils import load_parquet, save_parquet
         
         # Load
         log.info(f"Loading file {file_path}...")
         
-        if not Path(file_path).exists():
-            raise FileNotFoundError(f"File {file_path} not found")
-        
-        df = pd.read_parquet(file_path)
-        
-        if df.empty:
-            raise ValueError(f"No raw data available to enrich - {file_path}")
+        df = load_parquet(file_path)
 
         # Enrich
         log.info("Enriching data with technical indicators...")
         df_enriched = enrich_with_indicators(df)
         
-        # (TODO) missing some validation (number columns)
+        # (TODO) missing some validation (expected columns)
         
         # save temp enriched
         log.info("Saving enriched data...")
@@ -117,17 +127,11 @@ def stocks_etl_backfill_dag():
     @task
     def monthly_load(file_path: str, symbol: str, interval: str):
         
-        from scripts.utils.storage_utils import save_monthly_parquet
+        from scripts.utils.storage_utils import load_parquet,save_monthly_parquet
         
         log.info("Partitioning by year-month...")
         
-        if not Path(file_path).exists():
-            raise FileNotFoundError(f"File {file_path} not found")
-        
-        df_enriched = pd.read_parquet(file_path)
-        
-        if df_enriched.empty:
-            raise ValueError(f"No enriched data available - {file_path}")
+        df_enriched = load_parquet(file_path)
         
         save_monthly_parquet(df_enriched, symbol, interval, compress=True)
 
@@ -136,10 +140,11 @@ def stocks_etl_backfill_dag():
     
     task_args = get_task_args()
     extracted = extract_and_validate.expand_kwargs(task_args)
+    write_metadata_entry.expand_kwargs(extracted)
     enriched = enrich.expand_kwargs(extracted)
     monthly_load.expand_kwargs(enriched)
 
     # for clarity
     #extracted >> enriched
 
-dag = stocks_etl_backfill_dag()
+dag = yfinance_stocks_etl_backfill_dag()

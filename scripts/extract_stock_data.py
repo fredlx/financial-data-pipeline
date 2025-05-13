@@ -32,6 +32,7 @@ def fetch_stock_data(
         auto_adjust=True, 
         progress=False
         )
+    
     if df.empty:
         raise ValueError(f"No data returned for {symbol} with {period=} and {interval=}")
         
@@ -46,6 +47,6 @@ def clean_stock_data(df):
     df.columns = ['date', 'open', 'high', 'low', 'close', 'volume']
     
     if df.empty:
-        raise ValueError(f"No data")
+        raise ValueError("No data returned from cleaning")
     
     return df

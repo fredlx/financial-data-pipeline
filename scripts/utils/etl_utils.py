@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 
 # (TODO) move to settings/config.ini
-META_FILE = Path("data/meta/last_date_per_symbol.json")
+#META_FILE = Path("data/meta/last_date_per_symbol.json")
 
 # ---------- INTERVAL HELPERS ----------
 
@@ -42,28 +42,44 @@ def yf_interval_to_pandas_freq(yf_interval: str) -> str:
 # ---------- METADATA HELPERS ----------
 
 def load_metadata(meta_file_path):
-    if meta_file_path.exists():
+    if Path(meta_file_path).exists():
         with open(meta_file_path, 'r') as f:
             return json.load(f)
     return {}
 
 def save_metadata(meta_file_path: str, meta: dict):
-    meta_file_path.parent.mkdir(parents=True, exist_ok=True)
+    Path(meta_file_path).parent.mkdir(parents=True, exist_ok=True)
     with open(meta_file_path, 'w') as f:
         json.dump(meta, f, indent=2)
 
-def update_metadata(time_series, symbol, interval, meta_file_path):
-    if time_series.empty:
-        raise ValueError("Time series is empty — cannot update metadata.")
+def update_metadata_json(last_date, symbol, interval, meta_file_path):  # time_series
+    #if time_series.empty:
+    #    raise ValueError("Time series is empty — cannot update metadata.")
     
     meta = load_metadata(meta_file_path)
     meta_key = f"{symbol}_{interval}"
     
+    #time_series = pd.to_datetime(time_series)
+    #last_dt = time_series.max()
+    #last_date_str = last_dt.strftime('%Y-%m-%d %H:%M') if is_intraday(interval) else last_dt.strftime('%Y-%m-%d')
+    
+    meta[meta_key] = {"last_date": last_date, "interval": interval}
+    save_metadata(meta_file_path, meta)
+
+
+def get_last_date(time_series, interval):
+    
+    #def is_intraday(interval: str) -> bool:
+    #    return interval in {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h"}
+    
+    if time_series.empty:
+        raise ValueError("Time series is empty — cannot update metadata.")
+    
     time_series = pd.to_datetime(time_series)
     last_dt = time_series.max()
     last_date_str = last_dt.strftime('%Y-%m-%d %H:%M') if is_intraday(interval) else last_dt.strftime('%Y-%m-%d')
-    meta[meta_key] = {"last_date": last_date_str}
-    save_metadata(meta)
+    
+    return last_date_str
 
 
 # ---------- FILE LOAD HELPERS ----------

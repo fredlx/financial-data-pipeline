@@ -397,10 +397,10 @@ def daily_return(close, fillna=False):
 
 
 ### GET ALL INDICATORS ###
-def get_all_indicators(df_orig, default_params=True, resize_df=False):
+def get_all_indicators(df_orig, default_params=True, resize_df=False, ta_params_path=TA_PARAMS_PATH):
     """Returns df with indicators considering csv with params"""
     
-    ta_params_df = get_ta_params(default_params, ta_params_path=TA_PARAMS_PATH)
+    ta_params_df = get_ta_params(ta_params_path, default_params)
     
     def get_max_window(series, delta=10):
         return pd.Series(series.explode(), dtype="float").max() + delta

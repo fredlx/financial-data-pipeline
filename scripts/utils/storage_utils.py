@@ -25,6 +25,20 @@ def save_parquet(df, base_file_path, compress, hash_algo=DEFAULT_HASH_ALGO):
     return output_path
 
 
+
+def load_parquet(file_path):
+    
+    if not Path(file_path).exists():
+        raise FileNotFoundError(f"File {file_path} not found")
+        
+    df = pd.read_parquet(file_path)
+        
+    if df.empty:
+        raise ValueError(f"No raw data available to enrich - {file_path}")
+    
+    return df
+
+
 def save_csv(df, base_file_path, compress, hash_algo=DEFAULT_HASH_ALGO):
     
     compression = "gzip" if compress else None
