@@ -1,0 +1,64 @@
+{
+    "ao": {
+        "centerline": 0.0
+    },
+
+    "kama": {},
+
+    "ppo": {
+        "centerline": 0.0
+    },
+
+    "pvo": {
+        "centerline": 0.0
+    },
+
+    "roc": {
+        "overbought": 8.0,
+        "oversold": -0.8,
+        "centerline": 0.0
+    },
+
+    "rsi": {
+        "overbought": 70.0,
+        "oversold": 30.0,
+        "centerline": 50.0
+    },
+
+    "stoch": {
+        "overbought": 80.0,
+        "oversold": 20.0,
+        "centerline": 50.0
+    },
+
+    "stochrsi": {
+        "overbought": 0.9,
+        "oversold": 0.1,
+        "centerline": 0.5
+    },
+    
+    "tsi": {
+        "overbought": 30.0,
+        "oversold": -20.0,
+        "centerline": 0.0
+    },
+
+    "uo": {
+        "overbought": 70.0,
+        "oversold": 40.0,
+        "centerline": 50.0
+    },
+
+    "willr": {
+        "overbought": -20.0,
+        "oversold": -80.0,
+        "centerline": -50.0
+    }
+
+
+    
+
+    
+
+
+}

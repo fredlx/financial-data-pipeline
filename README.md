@@ -78,5 +78,165 @@ Solutions: get its own task, or use filelock (pip install filelock), but careful
 How to fix:
 - additional dag task to return needed dictionary
 - remove unnecessary key at expand_kwargs level
-- or simply make task accept an unusued param 
+- or simply make task accept an unusued param
 
+
+# convert Airflow project into a production-ready Docker + Airflow Compose setup
+
+Steps:
+
+1. Project structure
+project_name/
+├── dags/
+│   └── yfinance_stocks_etl_backfill.py
+├── scripts/
+│   └── ...
+├── config/
+│   ├── config.ini
+│   └── settings.py
+├── data/  # Mounted volume
+├── logs/  # Mounted volume
+├── plugins/  # Optional
+├── requirements.txt
+├── Dockerfile  # optional
+├── .env
+└── docker-compose.yaml
+
+2. requirements.txt
+pip freeze > requirements.txt
+
+3. .env file (Airflow config)
+AIRFLOW_UID=50000
+
+4. docker-compose.yaml (clean and functional)
+yaml:
+
+version: '3.8'
+
+services:
+  airflow:
+    image: apache/airflow:2.8.1-python3.10
+    restart: always
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      _AIRFLOW_WWW_USER_USERNAME: airflow
+      _AIRFLOW_WWW_USER_PASSWORD: airflow
+    env_file: .env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/airflow/scripts
+      - ./config:/opt/airflow/config
+      - ./data:/opt/airflow/data
+      - ./logs:/opt/airflow/logs
+      - ./requirements.txt:/requirements.txt
+    command: >
+      bash -c "
+        pip install -r /requirements.txt &&
+        airflow db upgrade &&
+        airflow users create --username airflow --password airflow --firstname admin --lastname user --role Admin --email admin@example.com &&
+        airflow webserver"
+    ports:
+      - "8080:8080"
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.1-python3.10
+    restart: always
+    depends_on:
+      - airflow
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/airflow/scripts
+      - ./config:/opt/airflow/config
+      - ./data:/opt/airflow/data
+      - ./logs:/opt/airflow/logs
+      - ./requirements.txt:/requirements.txt
+    command: >
+      bash -c "
+        pip install -r /requirements.txt &&
+        airflow db upgrade &&
+        airflow scheduler"
+
+5. Run
+```bash
+docker compose up --build
+```
+
+6. Access Airflow UI
+Go to: http://localhost:8080
+Login: airflow / airflow   # (as per yaml file)
+
+7. Improvements:
+
+- Use Postgres instead of SQLite: Replace connection string and add a postgres service in docker-compose
+    - Add PostgreSQL service to docker-compose.yaml
+        postgres:
+            image: postgres:15
+            environment:
+                POSTGRES_USER: airflow
+                POSTGRES_PASSWORD: airflow
+                POSTGRES_DB: airflow
+            volumes:
+                - postgres-db-volume:/var/lib/postgresql/data
+            ports:
+                - "5432:5432"
+
+    - Configure Airflow to use PostgreSQL
+        environment:
+            AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+            AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+            AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+            AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres:5432/airflow
+
+    - Add required Python packages to requirements.txt: psycopg2-binary
+    - Add volume for PostgreSQL data (bottom of file):
+        volumes:
+            postgres-db-volume:
+
+    - Initialize the database
+        docker compose up airflow-init
+        (or) airflow db upgrade
+
+- Add volume-based metadata JSON: Mount ./data and persist it (mapping a host folder (like ./data) into the Docker container)
+    - volumes:
+        - ./data:/opt/airflow/data
+- Use CeleryExecutor for scale: Add Redis + Celery workers in docker-compose.yaml
+    - Airflow’s default LocalExecutor runs all tasks sequentially or in threads on the same machine. If horizontal scalability (e.g. run tasks in parallel across machines or multiple containers), you need:
+        - CeleryExecutor — enables distributed task execution. Celery allows task parallelism per symbol — e.g. run 20 extract_and_validate tasks at once.
+        - Redis (or RabbitMQ) — message broker to queue and distribute tasks (task broker). Redis is only the broker — Airflow stores results in the result backend.
+            redis:
+                image: redis:7
+                ports:
+                    - "6379:6379"
+        - Celery workers — process tasks in parallel
+            airflow-worker:
+                image: apache/airflow:2.8.1-python3.10
+                depends_on:
+                    - redis
+                    - airflow
+                environment:
+                    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+                    AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+                    AIRFLOW__CELERY__RESULT_BACKEND: db+sqlite:////opt/airflow/airflow.db
+                volumes:
+                    - ./dags:/opt/airflow/dags
+                    - ./scripts:/opt/airflow/scripts
+                    - ./config:/opt/airflow/config
+                    - ./data:/opt/airflow/data
+                    - ./logs:/opt/airflow/logs
+                    - ./requirements.txt:/requirements.txt
+                command: >
+                    bash -c "
+                    pip install -r /requirements.txt &&
+                    airflow celery worker"
+
+            environment:
+                AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+                AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+                AIRFLOW__CELERY__RESULT_BACKEND: db+sqlite:////opt/airflow/airflow.db  (change to postgres)
+
+- Refactor Makefile for prod: Automate DAG trigger, cleanup, volume pruning, etc.

@@ -1,0 +1,216 @@
+# Momentum Signals
+
+ao:
+  name: "ao"
+  params:
+    centerline: 0.0
+  signals: ["center_cross", "trend"]
+  signals_alt: ["center_cross_2", "trend_2"]
+
+kama:
+  name: "kama"
+  params: {}
+  signals: ["signal_cross", "trend"]
+  signals_alt: []
+
+ppo:
+  name: "ppo"
+  params:
+    centerline: 0.0
+  signals: ["signal_cross", "center_cross", "trend"]
+  signals_alt: ["center_cross_2", "trend_2"]
+
+pvo:
+  name: "pvo"
+  params:
+    centerline: 0.0
+  signals: ["signal_cross", "center_cross", "trend"]
+  signals_alt: ["center_cross_2", "trend_2"]
+
+roc:
+  name: "roc"
+  params:
+    overbought: 8.0
+    oversold: -0.8
+    centerline: 0.0
+  signals: ["obos", "center_cross", "trend"]
+  signals_alt: ["obos_2", "center_cross_2", "trend_2"]
+
+rsi:
+  name: "rsi"
+  params:
+    overbought: 70.0
+    oversold: 30.0
+    centerline: 50.0
+  signals: ["obos", "center_cross", "trend"]
+  signals_alt: ["obos_2", "center_cross_2", "trend_2"]
+
+stoch:
+  name: "stoch"
+  params:
+    overbought: 80.0
+    oversold": 20.0
+    centerline: 50.0
+  signals: ["obos", "signal_cross", "center_cross", "trend"]
+  signals_alt: ["obos_2", "center_cross_2", "trend_2"]
+
+stochrsi:
+  name: "stochrsi"
+  params:
+    overbought: 0.9
+    oversold: 0.1
+    centerline: 0.5
+  signals: ["obos", "signal_cross", "center_cross", "trend"]
+  signals_alt: ["obos_2", "center_cross_2", "trend_2"]  
+
+tsi:
+  name: "tsi"
+  params:
+    overbought: 30.0
+    oversold: -20.0
+    centerline: 0.0
+  signals: ["obos", "signal_cross", "center_cross", "trend"]
+  signals_alt: ["obos_2", "center_cross_2", "trend_2"]
+
+uo:
+  name: "uo"
+  params:
+    overbought: 70.0
+    oversold: 40.0
+    centerline: 50.0
+  signals: ["obos", "center_cross", "trend"]
+  signals_alt: ["obos_2", "center_cross_2", "trend_2"]
+
+willr:
+  name: "willr"
+  params:
+    overbought: -20.0
+    oversold: -80.0
+    centerline: -50.0
+  signals: ["obos", "center_cross", "trend"]
+  signals_alt: ["obos_2", "center_cross_2", "trend_2"]
+
+
+# Volume
+
+adi:
+  name: "adi"
+  params: {}
+  signals: []
+  signals_alt: []
+
+mfi:
+  name: "mfi"
+  params:
+    overbought: 80.0
+    oversold: 20.0
+    centerline: 50.0
+  signals: ["obos", "center_cross", "trend"]
+  signals_alt: ["obos_2", "center_cross_2", "trend_2"]
+  
+cmf:
+  name: "cmf"
+  params:
+    centerline: 0.0
+    safe_margin: 0.05
+  signals: ["center_cross", "trend"]
+  signals_alt: ["center_cross_2", "trend_2"]
+
+emv:
+  name: "emv"
+  params:
+    centerline: 0.0
+  signals: ["signal_cross","center_cross", "trend"]
+  signals_alt: ["center_cross_2", "trend_2"]
+
+fi:
+  name: "fi"
+  params:
+    centerline: 0.0
+  signals: ["center_cross", "trend"]
+  signals_alt: ["center_cross_2", "trend_2"]
+
+nvi:
+  name: "nvi"
+  params: {}
+  signals: ["signal_cross"]
+  signals_alt: []
+
+
+
+
+# Trend
+
+cci:
+  params:
+    overbought:  200.0
+    oversold: -200.0
+    centerline: 0.0
+  signals: 
+    standard: ["obos_1", "center_cross_1", "trend_1"]
+    custom: ["obos_2", "center_cross_2", "trend_2"]  # smooth_line
+
+dpo:
+  params:
+    centerline: 0.0
+  signals:
+    standard: ["center_cross_1", "trend_1"]
+    custom: ["center_cross_2", "trend_2"]  # smooth_line
+
+ema:
+  params: null
+  signals:
+    standard: ["signal_cross", "short_cross", "long_cross", "short_trend", "long_trend"]
+    custom: []
+
+sma:
+  params: null
+  signals:
+    standard: ["signal_cross", "short_cross", "long_cross", "short_trend", "long_trend"]
+    custom: null
+
+wma:
+  params: null
+  signals:
+    standard: ["signal_cross", "short_cross", "long_cross", "short_trend", "long_trend"]
+    custom: []
+
+kst:
+  params:
+    centerline: 0.0
+  signals:
+    standard: ["signal_cross", "center_cross", "trend"]
+    custom: []
+
+macd:
+  params:
+    centerline: 0.0
+  signals:
+    standard: ["signal_cross", "center_cross", "trend"]
+    custom: []
+
+mi:
+  params:
+    centerline: 26.5
+  signals:
+    standard: ["center_cross", "trend"]
+    custom: ["signal_cross"]  # with smooth_line
+
+psar:
+  params: null
+  signals:
+    standard: ["signal_cross", "trend"]
+    custom: []
+
+trix:
+  params:
+    centerline: 0.0
+  signals:
+    standard: ["signal_cross", "center_cross", "trend"]
+    custom: []
+
+stc:
+  params: null
+  signals:
+    standard: []
+    custom: []

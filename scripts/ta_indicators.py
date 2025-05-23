@@ -27,12 +27,19 @@ def get_ta_params(ta_params_path, default_params=True):
     return ta_params_df
 
 def get_prices(df):
-    df.columns = [x.lower() for x in df.columns]
+    df.columns = [col.lower() for col in df.columns]
+    
+    for col in ["open", "high", "low", "close", "volume"]:
+        if col not in df.columns:
+            raise KeyError(f"Missing column: {col}")
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+    
     open = df["open"]
     high = df["high"]
     low = df["low"]
     close = df["close"]
     volume = df["volume"]
+    
     return open, high, low, close, volume
 
 # (NOTUSED)
@@ -63,11 +70,11 @@ def ppo(close, window_slow=26, window_fast=12, window_sign=9, fillna=False):
     """Percentage Price Oscillator Line"""
     return ta.momentum.ppo(close, window_slow, window_fast, window_sign, fillna)
 
-# histogram
+# PPO histogram
 def ppo_hist(close, window_slow=26, window_fast=12, window_sign=9, fillna= False):
     return ta.momentum.ppo_hist(close, window_slow, window_fast, window_sign, fillna)
 
-# signal
+# PPO signal
 def ppo_signal(close, window_slow=26, window_fast=12, window_sign=9, fillna=False):
     """Percentage Price Oscillator Signal Line - Smoothed PPO"""
     return ta.momentum.ppo_signal(close, window_slow, window_fast, window_sign, fillna)
@@ -77,11 +84,11 @@ def ppo_signal(close, window_slow=26, window_fast=12, window_sign=9, fillna=Fals
 def pvo(volume, window_slow=26, window_fast=12, window_sign=9, fillna=False):
     return ta.momentum.pvo(volume, window_slow, window_fast, window_sign, fillna)
 
-# histogram
+# PVO histogram
 def pvo_hist(volume, window_slow=26, window_fast=12, window_sign=9, fillna=False):
     return ta.momentum.pvo_hist(volume, window_slow, window_fast, window_sign, fillna)
 
-# signal
+# PVO signal
 def pvo_signal(volume, window_slow=26, window_fast=12, window_sign=9, fillna= False):
     return ta.momentum.pvo_signal(volume, window_slow, window_fast, window_sign, fillna)
 
@@ -93,16 +100,17 @@ def roc(close, window= 12, fillna= False):
 def rsi(close, window=14, fillna=False):
     return ta.momentum.rsi(close, window, fillna)
 
-# Stochastic Oscillator (STOCH)
+# Stochastic Oscillator (STOCH %K)
 def stoch(high, low, close, window=14, smooth_window=3, fillna=False):
     return ta.momentum.stoch(high, low, close, window, smooth_window, fillna)
 
-# SMA of Stochastic Oscillator (STOCH)
+# SMA of Stochastic Oscillator (STOCH %D) - stoch_signal
 def stoch_signal(high, low, close, window=14, smooth_window=3, fillna=False):
-    """Shows SMA of Stochastic Oscillator. Typically a 3 day SMA."""
+    """SMA of Stochastic Oscillator. Typically a 3 day SMA."""
     return ta.momentum.stoch_signal(high, low, close, window, smooth_window, fillna)
 
 # Stochastic RSI (STOCHRSI)
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi
 def stochrsi(close, window=14, smooth1=3, smooth2=3, fillna=False):
     return ta.momentum.stochrsi(close, window, smooth1, smooth2, fillna)
 
@@ -113,65 +121,113 @@ def stochrsi_k(close, window=14, smooth1=3, smooth2=3, fillna=False):
     return ta.momentum.stochrsi_k(close, window, smooth1, smooth2, fillna)
 
 # True strength index (TSI)
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index
 def tsi(close, window_slow=25, window_fast=13, fillna=False):
     return ta.momentum.tsi(close, window_slow, window_fast, fillna)
 
+def tsi_signal(tsi, roll_window=10, adjust=False):
+    """EMA of True strength index. Typically a 10 period window."""
+    return tsi.ewm(span=roll_window, adjust=adjust, min_periods=roll_window).mean()
+
 # Ultimate Oscillator (UO)
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ultimate-oscillator
 def ultimate_oscillator(high, low, close, window1=7, window2=14, window3=28, weight1=4.0, weight2=2.0, weight3=1.0, fillna=False):
     return ta.momentum.ultimate_oscillator(high, low, close, window1, window2, window3, weight1, weight2, weight3, fillna)
 
 # Williams %R (WILLR)
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/williams-r
 def williams_r(high, low, close, lbp=14, fillna=False):
     return ta.momentum.williams_r(high, low, close, lbp, fillna)
 
 
 ### VOLUME ###
-# Accumulation/Distribution Index (ADI)
+
+# Accumulation/Distribution Index (ADI) - Chaikin
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/accumulation-distribution-line
+
 def acc_dist_index(high, low, close, volume, fillna=False):
     return ta.volume.acc_dist_index(high, low, close, volume, fillna)
 
-# Chaikin Money Flow (CMF)
+# Chaikin Money Flow (CMF) - Chaikin
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf
 def chaikin_money_flow(high, low, close, volume, window=20, fillna=False):
     return ta.volume.chaikin_money_flow(high, low, close, volume, window, fillna)
 
-# Ease of movement (EMV)
-def ease_of_movement(high, low, volume, window=14, fillna=False):
-    return ta.volume.ease_of_movement(high, low, volume, window, fillna)
-
-# Force Index (FI)
-def force_index(close, volume, window=13, fillna=False):
-    return ta.volume.force_index(close, volume, window, fillna)
-
-# Money Flow Index (MFI)
+# Money Flow Index (MFI) - Gene Quong and Avrum Soudack
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/money-flow-index-mfi
 def money_flow_index(high, low, close, volume, window=14, fillna=False):
     return ta.volume.money_flow_index(high, low, close, volume, window, fillna)
 
-# Negative Volume Index (NVI)
-def negative_volume_index(close, volume, fillna=False):
-    return ta.volume.negative_volume_index(close, volume, fillna)
 
-# On-balance volume (OBV)
-def on_balance_volume(close, volume, fillna=False):
-    return ta.volume.on_balance_volume(close, volume, fillna)
+# Ease of movement (EMV) - Richard Arms
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ease-of-movement-emv
+def ease_of_movement(high, low, volume, window=14, fillna=False):
+    return ta.volume.ease_of_movement(high, low, volume, window, fillna)
 
-# SMA of On-balance volume (OBV)
 def sma_ease_of_movement(high, low, volume, window=14, fillna=False):
     return ta.volume.sma_ease_of_movement(high, low, volume, window, fillna)
 
+
+# Force Index (FI) - Alexander Elder
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/force-index
+def force_index(close, volume, window=13, fillna=False):
+    return ta.volume.force_index(close, volume, window, fillna)
+
+
+# Negative Volume Index (NVI) - Paul Dysart
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/negative-volume-index-nvi
+def negative_volume_index(close, volume, fillna=False):
+    return ta.volume.negative_volume_index(close, volume, fillna)
+
+def nvi_signal(nvi, roll_window=255, adjust=False):
+    """Signal line for NVI: EMA of NVI, typically 255 periods"""
+    return nvi.ewm(span=roll_window, adjust=adjust, min_periods=roll_window).mean()
+
+
+# On-balance volume (OBV) - Joe Granville
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/on-balance-volume-obv
+def on_balance_volume(close, volume, fillna=False):
+    return ta.volume.on_balance_volume(close, volume, fillna)
+
+def obv_signal(obv, roll_window=20):  # or 65
+    """Signal line for OBV: SMA of OBV, typically a 20 or 65 SMA"""
+    return obv.rolling(window=roll_window).mean()
+
+
 # Volume-price trend (VPT)
+# https://www.investopedia.com/ask/answers/030315/what-volume-price-trend-indicator-vpt-formula-and-how-it-calculated.asp
 def volume_price_trend(close, volume, fillna=False):
     return ta.volume.volume_price_trend(close, volume, fillna)
 
-# Volume Weighted Average Price (VWAP)
+
+# Volume Weighted Average Price (VWAP) 
+# https://academy.ftmo.com/lesson/vwap-technical-indicator/
 def volume_weighted_average_price(high, low, close, volume, window=14, fillna=False):
     return ta.volume.volume_weighted_average_price(high, low, close, volume, window, fillna)
 
+
 ### VOLATILITY ###
 
+# Average True Range (ATR) - J. Welles Wilder
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr-and-average-true-range-percent-atrp
 def average_true_range(high, low, close, window=14, fillna=False):
     return ta.volatility.average_true_range(high, low, close, window, fillna)
 
-# Bollinger Bands (BB)
+# (TODO) Average True Range Percent (ATRP): include sma flag, window and calculation
+def average_true_range_percent(atr, close, use_sma=False, roll_window=20):
+    
+    if use_sma:
+        atrp = atr / close.rolling(window=roll_window).mean() * 100
+    else:
+        atrp = atr / close * 100
+    
+    return atrp
+
+
+
+# Bollinger Bands (BB) - John Bollinger
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth
+
 # upper band
 def bollinger_hband(close, window=20, window_dev=2, fillna=False): 
     return ta.volatility.bollinger_hband(close, window, window_dev, fillna)
@@ -205,7 +261,9 @@ def bollinger_wband(close, window=20, window_dev=2, fillna=False):
     return ta.volatility.bollinger_wband(close, window, window_dev, fillna)
 
 
-# Donchian Channel (DC)
+# Donchian Channel (DC) - Richard Donchian
+# https://www.investopedia.com/terms/d/donchianchannels.asp
+# https://trendspider.com/learning-center/donchian-channels-a-comprehensive-guide-for-trend-following-traders/
 
 # upper band
 def donchian_channel_hband(high, low, close, h_window=20, offset=0, fillna=False):  
@@ -229,6 +287,7 @@ def donchian_channel_wband(high, low, close, m_window=10, offset=0, fillna=False
 
 
 # Keltner Channel (KC)
+# # https://trendspider.com/learning-center/keltner-channels-understanding-and-applying-this-classic-technical-indicator/
 
 # upper band
 def keltner_channel_hband(high, low, close, window=20, window_atr=10, fillna=False, original_version=True):
@@ -258,41 +317,64 @@ def keltner_channel_pband(high, low, close, window=20, window_atr=10, fillna=Fal
 def keltner_channel_wband(high, low, close, window=20, window_atr=10, fillna=False, original_version=True):
     return ta.volatility.keltner_channel_wband(high, low, close, window, window_atr, fillna, original_version)
 
-# Ulcer Index (ui)
+
+# Ulcer Index (ui) - Peter Martin and Byron McCann
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ulcer-index
 def ulcer_index(close, window=14, fillna=False):
     return ta.volatility.ulcer_index(close, window, fillna)
 
 ### TREND ### 
-# Average Directional Movement Index (ADX)
+
+# Average Directional Movement Index (ADX) - Welles Wilder
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx
+
 def adx(high, low, close, window=14, fillna=False):
     return ta.trend.adx(high, low, close, window, fillna)
-# negative adx
+
+# negative adx (-DI)
 def adx_neg(high, low, close, window=14, fillna=False):
     return ta.trend.adx_neg(high, low, close, window, fillna)
-# positive adx
+
+# positive adx (+DI)
 def adx_pos(high, low, close, window=14, fillna=False):
     return ta.trend.adx_pos(high, low, close, window, fillna)
 
 
-# Aroon Indicator Negative (AI) --> Documentation does not include param "low"
+# Aroon and Aroon Oscillator
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon-oscillator
+
+# Aroon Indicator Negative (AI-)
 def aroon_down(close, low, window=25, fillna=False):
     """Identify when trends are likely to change direction (downtrend)."""
     return ta.trend.aroon_down(close, low, window, fillna)
-# Aroon Indicator Positive (AI) --> Documentation does not include param "high"
+
+# Aroon Indicator Positive (AI+)
 def aroon_up(close, high, window=25, fillna=False):
     """Identify when trends are likely to change direction (uptrend)."""
     return ta.trend.aroon_up(close, high, window, fillna)
 
+# Aroon Oscillator
+def aroon_oscillator(aroon_up, aroon_down):
+    return aroon_up - aroon_down
 
-# Commodity Channel Index (CCI)
+
+# Commodity Channel Index (CCI) - Donald Lambert
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/commodity-channel-index-cci
 def cci(high, low, close, window=20, constant=0.015, fillna=False):
     return ta.trend.cci(high, low, close, window, constant, fillna)
 
+
 # Detrended Price Oscillator (DPO)
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/detrended-price-oscillator-dpo
+
 def dpo(close, window=20, fillna=False):
     return ta.trend.dpo(close, window, fillna)
 
+
 # Exponential Moving Average (EMA)
+
+
 def ema_indicator(close, window=12, fillna=False):
     return ta.trend.ema_indicator(close, window, fillna)
 
@@ -396,22 +478,41 @@ def daily_return(close, fillna=False):
     return ta.others.daily_return(close, fillna)
 
 
+# (TODO) sharpe ratio
+
+# (TODO) Ulcer Performance Index (UPI), or Martin Ratio.
+# https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ulcer-index
+
+
 ### GET ALL INDICATORS ###
+
+# (TODO) refactor the entire resize df to accept partitioned files and not to pass the entire df if not needed
+
+def slice_df(df, ta_params_path=TA_PARAMS_PATH, default_params=True):
+    
+    def get_max_window(series, delta=10):
+        return pd.Series(series.explode(), dtype="float").max() + delta
+        
+    ta_params_df = get_ta_params(ta_params_path, default_params)
+    max_window = get_max_window(ta_params_df)
+    
+    df = df.tail(int(max_window)).reset_index(drop=True).copy()
+    
+    return df
+    
+
 def get_all_indicators(df_orig, default_params=True, resize_df=False, ta_params_path=TA_PARAMS_PATH):
     """Returns df with indicators considering csv with params"""
     
     ta_params_df = get_ta_params(ta_params_path, default_params)
     
-    def get_max_window(series, delta=10):
-        return pd.Series(series.explode(), dtype="float").max() + delta
-    
+    # (TODO) needs refactoring to accept partitioned files
     if resize_df:
-        max_window = get_max_window(ta_params_df)
-        df = df_orig.tail(int(max_window)).reset_index(drop=True).copy()
-        
+        df = slice_df(df_orig)
     else:
         df = df_orig.copy()
         
+    # Normalizes numeric data 
     open, high, low, close, volume = get_prices(df)
     
     # Awesome Oscilator (AO)
@@ -452,8 +553,9 @@ def get_all_indicators(df_orig, default_params=True, resize_df=False, ta_params_
     df["stochrsi_k"] = stochrsi_k(close, window, smooth1, smooth2, fillna=False)
 
     # True strength index (TSI)
-    window_slow, window_fast = ta_params_df.loc["tsi"]
+    window_slow, window_fast, window_signal = ta_params_df.loc["tsi"]
     df["tsi"] = tsi(close, window_slow, window_fast, fillna=False)
+    df["tsi_signal"] = tsi_signal(df["tsi"], window_signal)
 
     # Ultimate Oscillator (UO)
     window1, window2, window3, weight1, weight2, weight3 = ta_params_df.loc["uo"]
@@ -472,8 +574,10 @@ def get_all_indicators(df_orig, default_params=True, resize_df=False, ta_params_
     df["cmf"] = chaikin_money_flow(high, low, close, volume, window, fillna=False)
 
     # Ease of movement (EMV)
-    window = ta_params_df.loc["emv"]
+    # (TODO) not sure if sma_ease_of_movement window is the same as emv...
+    window, window_signal = ta_params_df.loc["emv"]
     df["emv"] = ease_of_movement(high, low, volume, window, fillna=False)
+    df["emv_signal"] = sma_ease_of_movement(high, low, volume, window_signal, fillna=False)
 
     # Force Index (FI)
     window = ta_params_df.loc["fi"]
@@ -487,11 +591,9 @@ def get_all_indicators(df_orig, default_params=True, resize_df=False, ta_params_
     df["nvi"] = negative_volume_index(close, volume, fillna=False)
 
     # On-balance volume (OBV)
+    window_signal = ta_params_df.loc["obv"]
     df["obv"] = on_balance_volume(close, volume, fillna=False)
-
-    # SMA of On-balance volume (OBV)
-    window = ta_params_df.loc["obv-sma"]
-    df["obv_sma"] = sma_ease_of_movement(high, low, volume, window, fillna=False)
+    df['obv_signal'] = obv_signal(df["obv"], window_signal)
 
     # Volume-price trend (VPT)
     df["vpt"] = volume_price_trend(close, volume, fillna=False)
@@ -500,10 +602,13 @@ def get_all_indicators(df_orig, default_params=True, resize_df=False, ta_params_
     window = ta_params_df.loc["vwap"]
     df["vwap"] = volume_weighted_average_price(high, low, close, volume, window, fillna=False)
 
+
     ### VOLATILITY ###
+    
     # ATR
     window = ta_params_df.loc["atr"]
     df["atr"] = average_true_range(high, low, close, window, fillna=False)
+    df['atrp'] = average_true_range_percent(df['atr'], close)
 
     # Bollinger Bands (BB)
     window, window_dev = ta_params_df.loc["bb"]
@@ -548,6 +653,7 @@ def get_all_indicators(df_orig, default_params=True, resize_df=False, ta_params_
     window = ta_params_df.loc["ai"]
     df["aroon_down"] = aroon_down(close, low, window, fillna=False)
     df["aroon_up"] = aroon_up(close, high, window, fillna=False)
+    df["aroon_osc"] = aroon_oscillator(df["aroon_up"], df["aroon_down"])
 
     # Commodity Channel Index (CCI)
     window, constant = ta_params_df.loc["cci"]
@@ -558,8 +664,14 @@ def get_all_indicators(df_orig, default_params=True, resize_df=False, ta_params_
     df["dpo"] = dpo(close, window, fillna=False)
 
     # Exponential Moving Average (EMA)
-    window = ta_params_df.loc["ema"]
-    df["ema"] = ema_indicator(close, window, fillna=False)
+    window1, window2 = ta_params_df.loc["ema"]
+    df[f"ema_{window1}"] = ema_indicator(close, window1, fillna=False)
+    df[f"ema_{window2}"] = ema_indicator(close, window2, fillna=False)
+    
+    # Simple Moving Average (SMA)
+    window1, window2 = ta_params_df.loc["sma"]
+    df[f"sma_{window1}"] = sma_indicator(close, window1, fillna=False)
+    df[f"sma_{window2}"] = sma_indicator(close, window2, fillna=False)
 
     # Ichimoku Kinkō Hyō (Ichimoku)
     window1, window2, window3 = ta_params_df.loc["ichimoku"]
@@ -590,9 +702,7 @@ def get_all_indicators(df_orig, default_params=True, resize_df=False, ta_params_
     df["psar_down_indicator"] = psar_down_indicator(high, low, close, step, max_step, fillna=False)
     df["psar_up_indicator"] = psar_up_indicator(high, low, close, step, max_step, fillna=False)
 
-    # Simple Moving Average (SMA)
-    window = ta_params_df.loc["sma"]
-    df["sma"] = sma_indicator(close, window, fillna=False)
+    
 
     # Schaff Trend Cycle (STC)
     window_slow, window_fast, cycle, smooth1, smooth2 = ta_params_df.loc["stc"]

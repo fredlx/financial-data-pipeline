@@ -1,0 +1,855 @@
+# Momentum Indicators
+
+ao:
+  ta_module: "momentum"
+  params:
+    main:
+      window1: 5
+      window2: 34
+    custom:
+      window_smooth: 5
+  meta:
+    label: "Awesome Oscilator"
+    short_name: "ao"
+    description: "Used to affirm trends or to anticipate possible reversals"
+    developer: "Bill Williams"
+    url: "https://www.forex.com/en-us/trading-guides/what-is-the-awesome-oscillator/"
+  plot:
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["ao", "ao_smooth"]
+
+kama:
+  ta_module: "momentum"
+  params:
+    main:
+      window: 10
+      pow1: 2
+      pow2: 30
+    custom: {}
+  meta:
+    label: "Kaufman's Adaptive Moving Average"
+    short_name: "kama"
+    description: "Trend-following indicator used to identify the overall trend, time turning points and filter price movements."
+    developer: "Kaufman"
+    url: ""
+  plot: 
+    type: "1p"
+    plot_1:
+      lines: ["close","kama"]
+
+ppo:
+  ta_module: "momentum"
+  params:
+    main:
+      window_slow: 26
+      window_fast: 12
+      window_sign: 9
+    custom: {}
+  meta:
+    label: "Percentage Price Oscillator"
+    short_name: "ppo"
+    description: ""
+    developer: "missing"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["ppo", "ppo_signal"]
+
+pvo:
+  ta_module: "momentum"
+  params:
+      main:
+        window_slow: 26
+        window_fast: 12
+        window_sign: 9
+      custom: {}
+  meta:
+    label: "Percentage Volume Oscillator"
+    short_name: "pvo"
+    description: ""
+    developer: ""
+    url: ""
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["pvo", "pvo_signal"]
+
+roc:
+  ta_module: "momentum"
+  params:
+    main:
+      window: 12
+    custom:
+      window_smooth: 5
+  meta:
+    label: "Rate of Change"
+    short_name: "roc"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/rate-of-change-roc"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["roc", "roc_smooth"]
+
+rsi:
+  ta_module: "momentum"
+  params:
+    main:
+      window: 14
+    custom:
+      window_smooth: 3
+  meta:
+    label: "Relative Strength Index"
+    short_name: "rsi"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["rsi", "rsi_smooth"]
+
+stoch:
+  ta_module: "momentum"
+  params:
+    main:
+      window: 14
+      smooth_window: 3
+    custom: {}
+  meta:
+    label: "Stochastic Oscillator"
+    short_name: "stoch"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochastic-oscillator-fast-slow-and-full"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["stoch", "stoch_signal"]
+
+stochrsi:
+  ta_module: "momentum"
+  params:
+    main:
+      window: 14
+      smooth1: 3
+      smooth2: 3
+    custom: {}
+  meta:
+    label: "Stochastic RSI"
+    short_name: "stochrsi"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi"
+  plot: 
+    type: "3p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["stochrsi", "stochrsi_d"]  # signal line: stochrsi_d
+    plot_3:
+      lines: ["stochrsi_d", "stochrsi_k"]
+
+tsi:
+  ta_module: "momentum"
+  params:
+    main:
+      window_slow: 25 
+      window_fast: 13
+    custom:
+      window_signal: 10
+  meta:
+    label: "True Strength Index"
+    short_name: "tsi"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["tsi", "tsi_signal"]
+
+uo:
+  ta_module: "momentum"
+  params:
+    main:
+      window1: 7 
+      window2: 14 
+      window3: 28 
+      weight1: 4.0
+      weight2: 2.0 
+      weight3: 1.0
+    custom:
+      window_smooth: 3
+  meta:
+    label: "Ultimate Oscillator"
+    short_name: "uo"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ultimate-oscillator"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["uo", "uo_smooth"]
+
+willr:
+  ta_module: "momentum"
+  params:
+    main:
+      lbp: 14
+    custom:
+      window_smooth: 3
+  meta:
+    label: "Williams %R"
+    short_name: "willr"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/williams-r"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["willr", "willr_smooth"]
+
+# Volume Indicators
+
+adi:
+  ta_module: "volume"
+  params: {}
+  meta:
+    label: "Accumulation/Distribution Index"
+    short_name: "adi"
+    description: ""
+    developer: "Chaikin"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/accumulation-distribution-line"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["adi"]
+
+cmf:
+  ta_module: "volume"
+  params:
+    main:
+      window: 20
+    custom:
+      window_smooth: 3
+  meta:
+    label: "Chaikin Money Flow"
+    short_name: "cmf"
+    description: ""
+    developer: "Chaikin"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["cmf", "cmf_smooth"]
+
+emv:
+  ta_module: "volume"
+  params:
+    main:
+      window: 14
+    custom:
+      window_signal: 14
+  meta:
+    label: "Ease of Movement"
+    short_name: "emv"
+    description: ""
+    developer: "Richard Arms"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ease-of-movement-emv"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["emv", "emv_signal"]
+
+fi:
+  ta_module: "volume"
+  params:
+    main:
+      window: 13
+    custom:
+      window_smooth: 3
+  meta:
+    label: "Force Index"
+    short_name: "fi"
+    description: ""
+    developer: "Alexander Elder"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/force-index"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["fi", "fi_smooth"]
+
+mfi:
+  ta_module: "volume"
+  params:
+    main:
+      window: 14
+    custom:
+      window_smooth: 3
+  meta:
+    label: "Money Flow Index"
+    short_name: "mfi"
+    description: ""
+    developer: "Gene Quong and Avrum Soudack"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/money-flow-index-mfi"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["mfi", "mfi_smooth"]
+
+nvi:
+  ta_module: "volume"
+  params:
+    main:
+      roll_window: 14  # not main, but ok
+    custom: {}
+  meta:
+    label: "Negative Volume Index"
+    short_name: "nvi"
+    description: ""
+    developer: "Paul Dysart"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/negative-volume-index-nvi"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["nvi", "nvi_signal"]
+
+obv:
+  ta_module: "volume"
+  params:
+    main:
+      roll_window: 20
+    custom: {}
+  meta:
+    label: "On-balance volume"
+    short_name: "obv"
+    description: ""
+    developer: "Joe Granville"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/on-balance-volume-obv"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["obv", "obv_signal"]
+
+vpt:
+  ta_module: "volume"
+  params:
+    main: {}
+    custom:
+      window_smooth: 14
+  meta:
+    label: "Volume Price Trend"
+    short_name: "vpt"
+    description: ""
+    developer: ""
+    url: "https://www.investopedia.com/ask/answers/030315/what-volume-price-trend-indicator-vpt-formula-and-how-it-calculated.asp"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["vpt", "vpt_smooth"]
+
+vwap:
+  ta_module: "volume"
+  params:
+    main:
+      window: 14
+    custom: {}
+  meta:
+    label: "Volume Weighted Average Price"
+    short_name: "vwap"
+    description: ""
+    developer: ""
+    url: "https://academy.ftmo.com/lesson/vwap-technical-indicator/"
+  plot: 
+    type: "1p"
+    plot_1:
+      lines: ["close", "vwap"]
+
+# Volatility Indicators
+
+atr:
+  ta_module: "volatility"
+  params:
+    main:
+      window: 14
+    custom:
+      window_smooth: 3
+  meta:
+    label: "Average True Range"
+    short_name: "atr"
+    description: ""
+    developer: "J. Welles Wilder"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr-and-average-true-range-percent-atrp"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["atr", "atr_smooth"]
+
+atrp:
+  ta_module: "volatility"
+  params:
+    main:
+      window: 14
+      use_sma: False
+    custom:
+      window_smooth: 3
+  meta:
+    label: "Average True Range Percent"
+    short_name: "atrp"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr-and-average-true-range-percent-atrp"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["atrp", "atrp_smooth"]
+
+ui:
+  ta_module: "volatility"
+  params:
+    main:
+      window: 14
+    custom: {}
+  meta:
+    label: "Ulcer Index"
+    short_name: "ui"
+    description: ""
+    developer: "Peter Martin and Byron McCann"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ulcer-index"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["ui", "ui_smooth"]
+
+bb:
+  ta_module: "volatility"
+  params:
+    main:
+      window: 20
+      window_dev: 2
+    custom: {}
+  meta:
+    label: "Bollinger Bands"
+    short_name: "bb"
+    description: ""
+    developer: "John Bollinger"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth"
+  plot: 
+    type: "3p"
+    plot_1: 
+      lines: ["close", "bb_high", "bb_low", "bb_middle"]  # add series and colors later~
+      colors: ["black", "blue", "purple", "orange"]
+    plot_2: 
+      lines: ["bb_width"]
+      #colors: ["teal"]
+    plot_3:
+      lines: ["bb_width_p"]
+      #colors: ["magenta"]
+
+dc:
+  ta_module: "volatility"
+  params:
+    main:
+      h_window: 20
+      l_window: 20
+      m_window: 10
+      offset: 0
+    custom: {}
+  meta:
+    label: "Donchian Channel"
+    short_name: "dc"
+    description: ""
+    developer: "Richard Donchian"
+    url: "https://www.investopedia.com/terms/d/donchianchannels.asp"
+  plot: 
+    type: "3p"
+    plot_1: 
+      lines: ["close","dc_high", "dc_low", "dc_middle"]
+      colors: ["black", "blue", "purple", "orange"]
+    plot_2: 
+      lines: ["dc_width"]
+    plot_3:
+      lines: ["dc_width_p"]
+
+kc:
+  ta_module: "volatility"
+  params:
+      main:
+        window: 20
+        window_atr: 10
+        original_version: True
+      custom: {}
+  meta:
+    label: "Keltner Channel"
+    short_name: "kc"
+    description: ""
+    developer: "Chester W. Keltner"
+    url: "https://trendspider.com/learning-center/keltner-channels-understanding-and-applying-this-classic-technical-indicator/"
+  plot: 
+    type: "3p"
+    plot_1: 
+      lines: ["close","kc_high", "kc_low", "kc_middle"]
+      colors: ["black", "blue", "purple", "orange"]
+    plot_2: 
+      lines: ["kc_width"]
+    plot_3: 
+      lines: ["kc_width_p"]
+
+# Trend Indicators
+
+adx:
+  ta_module: "trend"
+  params:
+      main:
+        window: 14
+      custom: {}
+  meta:
+    label: "Average Directional Movement Index"
+    short_name: "adx"
+    description: ""
+    developer: "Welles Wilder"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx"
+  plot: 
+    type: "3p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["adx_pos", "adx_neg"]
+    plot_3:
+      lines: ["adx"]
+
+aroon:
+  ta_module: "trend"
+  params:
+    main:
+      window: 25
+      fillna: False
+    custom: {}
+  meta:
+    label: "Aroon Oscilator"
+    short_name: "aroon"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon-oscillator"
+  plot: 
+    type: "3p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["aroon_up", "aroon_down"]
+    plot_2:
+      lines: ["aroon_osc"]
+
+cci:
+  ta_module: "trend"
+  params:
+    main:
+      window: 25
+      constant: 0.015
+      fillna: False
+    custom:
+      window_smooth: 3
+  meta:
+    label: "Commodity Channel Index"
+    short_name: "cci"
+    description: ""
+    developer: "Donald Lambert"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/commodity-channel-index-cci"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["cci", "cci_smooth"]
+    
+dpo:
+  ta_module: "trend"
+  params:
+    main:
+      window: 20
+    custom:
+      window_smooth: 5
+  meta:
+    label: "Detrended Price Oscillator"
+    short_name: "dpo"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/detrended-price-oscillator-dpo"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["dpo", "dpo_smooth"]
+
+ema:
+  ta_module: "trend"
+  params:
+    main:
+      window_1: 12
+      window_2: 26
+    custom: {}
+  meta:
+    label: "Exponential Moving Average"
+    short_name: "ema"
+    description: ""
+    developer: ""
+    url: ""
+  plot: 
+    type: "1p" # 3p
+    plot_1:
+      lines: ["close","ema_1", "ema_2"]
+
+sma:
+  ta_module: "trend"
+  params:
+    main:
+      window_1: 12
+      window_2: 26
+    custom: {}
+  meta:
+    label: "Simple Moving Average"
+    short_name: "sma"
+    description: ""
+    developer: ""
+    url: ""
+  plot: 
+    type: "1p" # 3p
+    plot_1:
+      lines: ["close","sma_1", "sma_2"]
+
+wma:
+  ta_module: "trend"
+  params:
+    main:
+      window_1: 12
+      window_2: 26
+    custom: {}
+  meta:
+    label: "Weighted Moving Average (WMA)"
+    short_name: "wma"
+    description: ""
+    developer: ""
+    url: ""
+  plot: 
+    type: "1p" # 3p
+    plot_1:
+      lines: ["close","wma_1", "wma_2"]
+
+ichi:
+  ta_module: "trend"
+  params:
+    main:
+      window1: 9
+      window2: 26
+      window3: 52
+      period: 26
+    custom: {}
+  meta:
+    label: "Ichimoku Kinkō Hyō"
+    short_name: "ichi"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud"
+  plot: 
+    type: "1p"
+    plot_1:
+      lines: ["close","ichi_a", "ichi_b","ichi_base","ichi_conversion", "ichi_lagged"]
+      colors: ["black", "green", "red", "blue", "orange", "gray"]
+
+kst:
+  ta_module: "trend"
+  params:
+    main:
+      roc1: 10
+      roc2: 15
+      roc3: 20
+      roc4: 30
+      window1: 10
+      window2: 10
+      window3: 10
+      window4: 15
+    custom:
+      window_signal: 9
+  meta:
+    label: "KST Oscillator"
+    short_name: "kst"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["kst", "kst_signal"]
+
+macd:
+  ta_module: "trend"
+  params:
+    main:
+      window_slow: 12
+      window_fast: 26
+      window_sign: 9
+    custom: {}
+  meta:
+    label: "Moving Average Convergence Divergence"
+    short_name: "macd"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-moving-average-convergence-divergence-oscillator"
+  plot: 
+    type: "3p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["macd", "macd_signal"]
+    plot_3:
+      lines: ["macd_diff"]
+
+mi:
+  ta_module: "trend"
+  params:
+    main:
+      window_slow: 25
+      window_fast: 9
+    custom:
+      window_smooth: 7
+  meta:
+    label: "Mass Index"
+    short_name: "mi"
+    description: ""
+    developer: "Donald Dorsey"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["mi", "mi_smooth"]
+
+psar:
+  ta_module: "trend"
+  params:
+    main:
+      step: 0.02
+      max_step: 0.2
+    custom: {}
+  meta:
+    label: "Parabolic Stop and Reverse"
+    short_name: "psar"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar"
+  plot: 
+    type: "1p"
+    plot_1:
+      lines: ["close", "psar_down", "psar_up"]
+      colors: ["black","red", "green"]
+
+stc:
+  ta_module: "trend"
+  params:
+    main:
+      window_slow: 50
+      window_fast: 23
+      cycle: 10 
+      smooth1: 3
+      smooth2: 3
+    custom: {}
+  meta:
+    label: "Schaff Trend Cycle"
+    short_name: "stc"
+    description: ""
+    developer: ""
+    url: ""
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["stc"]
+
+trix:
+  ta_module: "trend"
+  params:
+    main:
+      window_slow: 15
+    custom:
+      window_signal: 9
+  meta:
+    label: "Triple Exponentially Smoothed Moving Average"
+    short_name: "trix"
+    description: ""
+    developer: ""
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix"
+  plot: 
+    type: "2p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["trix", "trix_signal"]
+
+vi:
+  ta_module: "trend"
+  params:
+    window: 14
+  meta:
+    label: "Vortex Indicator"
+    short_name: "stc"
+    description: ""
+    developer: "Etienne Botes and Douglas Siepman"
+    url: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/vortex-indicator"
+  plot: 
+    type: "3p"
+    plot_1:
+      lines: ["close"]
+    plot_2:
+      lines: ["vi_neg", "vi_pos"]
+      colors: ["red", "green"]
+    plot_3:
+      lines: ["vi_osc"]

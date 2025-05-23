@@ -7,23 +7,26 @@ import pandas as pd
 import logging
 log = logging.getLogger("airflow.task")
 
+# (TODO)
 #"email_on_failure": True,
 #"email": ["alerts@yourdomain.com"]
+# implement Path(str).resolve() for Docker consistency
 
 @dag(
     dag_id='yfinance_stocks_etl_backfill',
     start_date=datetime(2025, 5, 1),
     schedule=None,
     catchup=False,
-    #default_args = {
-    #    "owner": "airflow",
-    #    "retries": 1,
-    #    "retry_delay": timedelta(minutes=1),
-    #    },
+    max_active_runs=1,
+    default_args = {
+        "owner": "airflow",
+        "retries": 1,
+        "retry_delay": timedelta(minutes=1),
+        "depends_on_past": False
+        },
     #dagrun_timeout=timedelta(minutes=5),
-    tags=["stocks","backfill", "manual"]
+    tags=["yfinance", "stocks", "backfill"]
     )
-
 
 def yfinance_stocks_etl_backfill_dag():
     
@@ -50,7 +53,7 @@ def yfinance_stocks_etl_backfill_dag():
         
         return task_args
     
-    @task
+    @task # (TODO) (task_id="extract_and_validate", tags=["extract", "validate"], do_xcom_push=True)
     def extract_and_validate(symbol: str, period: str, interval: str):
         
         from scripts.extract_stock_data import fetch_stock_data, clean_stock_data
@@ -90,8 +93,6 @@ def yfinance_stocks_etl_backfill_dag():
     def write_metadata_entry(last_date: str, symbol: str, interval: str, file_path: str):
         # file_path is unused but required to support .expand_kwargs from upstream task
         
-        print(f"[DEBUG] last_date={last_date}, symbol={symbol}, interval={interval}, file_path={file_path}")
-        
         from config.settings import get_metadata_file
         from scripts.utils.etl_utils import update_metadata_json
         
@@ -104,6 +105,7 @@ def yfinance_stocks_etl_backfill_dag():
         # last_date is unused but required to support .expand_kwargs from upstream task
         
         from scripts.enrich_stock_data import enrich_with_indicators
+        #from scripts.constants import ENRICHED_COLUMNS
         from scripts.utils.storage_utils import load_parquet, save_parquet
         
         # Load
@@ -115,7 +117,10 @@ def yfinance_stocks_etl_backfill_dag():
         log.info("Enriching data with technical indicators...")
         df_enriched = enrich_with_indicators(df)
         
-        # (TODO) missing some validation (expected columns)
+        # (TODO) Validate expected columns: check number of columns instead of names
+        #missing_cols = set(ENRICHED_COLUMNS) - set(df_enriched.columns)
+        #if missing_cols:
+        #    raise AirflowException(f"Missing expected columns after enrichment: {missing_cols}")
         
         # save temp enriched
         log.info("Saving enriched data...")

@@ -6,7 +6,6 @@ from pathlib import Path
 import os
 import ast
 
-
 def safe_eval(val):
     try:
         return ast.literal_eval(val) if pd.notna(val) else () # None
